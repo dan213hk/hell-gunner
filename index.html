@@ -1341,103 +1341,220 @@ function startGame() {
         }
     };
 })();
-// --- 行動端觸控補丁 (Mobile Touch Patch) ---
-(function injectMobileControls() {
+// --- 雙搖桿控制補丁 (Visual Dual Stick Patch) ---
+(function injectVisualJoysticks() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) return;
 
-    // 1. 強制樣式調整：確保遊戲填滿手機螢幕
+    // 1. 插入搖桿樣式
     const style = document.createElement('style');
     style.innerHTML = `
-        #game-container { flex-direction: column; width: 100vw; height: 100vh; border: none; }
-        #sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; padding: 5px; font-size: 10px; border-left: none; border-top: 2px solid #4a0000; }
-        .ui-box { width: 48%; margin-bottom: 5px; margin-right: 2%; }
-        #radar-container, .controls { display: none; }
-        canvas { width: 100vw !important; height: auto !important; touch-action: none; }
-        .menu-title { font-size: 40px; }
+        #joystick-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 1000;
+        }
+        .stick {
+            position: absolute; width: 80px; height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            border-radius: 50%; bottom: 50px; pointer-events: none;
+            display: none;
+        }
+        .stick-knob {
+            position: absolute; width: 40px; height: 40px;
+            background: rgba(255, 0, 0, 0.5);
+            border-radius: 50%; top: 20px; left: 20px;
+        }
+        #left-stick { left: 50px; }
+        #right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
+        #right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
     `;
     document.head.appendChild(style);
 
-    // 2. 虛擬搖桿狀態
-    let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
-    
-    // 3. 覆蓋原本的 Update 邏輯，注入觸控位移
+    // 2. 創建搖桿 DOM
+    const jContainer = document.createElement('div');
+    jContainer.id = 'joystick-container';
+    jContainer.innerHTML = `
+        <div id="left-stick" class="stick"><div class="stick-knob"></div></div>
+        <div id="right-stick" class="stick"><div class="stick-knob"></div></div>
+    `;
+    document.body.appendChild(jContainer);
+
+    const lStick = document.getElementById('left-stick');
+    const rStick = document.getElementById('right-stick');
+    const lKnob = lStick.querySelector('.stick-knob');
+    const rKnob = rStick.querySelector('.stick-knob');
+
+    let controls = {
+        left: { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, id: -1 },
+        right: { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, id: -1 }
+    };
+
+    // 3. 核心邏輯補丁
     const originalUpdate = window.update;
     window.update = function() {
-        if (joystick.active) {
-            const dist = Math.hypot(joystick.moveX, joystick.moveY);
+        if (!gameStarted) return originalUpdate();
+
+        // 左搖桿：移動
+        if (controls.left.active) {
+            const dist = Math.hypot(controls.left.moveX, controls.left.moveY);
             if (dist > 5) {
-                const angle = Math.atan2(joystick.moveY, joystick.moveX);
-                const speed = player.speed;
-                let dx = Math.cos(angle) * speed;
-                let dy = Math.sin(angle) * speed;
-                
+                const angle = Math.atan2(controls.left.moveY, controls.left.moveX);
+                const normSpd = Math.min(dist / 40, 1) * player.speed;
+                let dx = Math.cos(angle) * normSpd;
+                let dy = Math.sin(angle) * normSpd;
                 if (!isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
+                if (!isInsideWall(player.y + dy, player.y + dy, player.size)) player.y += dy; // 修正原本的小 bug
                 if (!isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
-                
-                // 行動端自動朝向移動方向
-                player.angle = angle;
             }
         }
+
+        // 右搖桿：方向 + 自動射擊
+        if (controls.right.active) {
+            const dist = Math.hypot(controls.right.moveX, controls.right.moveY);
+            if (dist > 10) {
+                player.angle = Math.atan2(controls.right.moveY, controls.right.moveX);
+                if (player.shotTimer <= 0) window.fireShotgun();
+            }
+        }
+
         originalUpdate();
     };
 
-    // 4. 監聽觸控事件
-    canvas.addEventListener('touchstart', (e) => {
+    // 4. 事件監聽
+    canvas.addEventListener('touchstart', e => {
         e.preventDefault();
-        if (!gameStarted) return;
-
         for (let t of e.changedTouches) {
-            // 左半螢幕：移動搖桿
-            if (t.clientX < window.innerWidth / 2) {
-                joystick.active = true;
-                joystick.startX = t.clientX;
-                joystick.startY = t.clientY;
-            } 
-            // 右半螢幕：射擊
-            else {
-                // 更新射擊角度為當前觸控點相對於玩家位置
-                const rect = canvas.getBoundingClientRect();
-                const tx = (t.clientX - rect.left) * (canvas.width / rect.width);
-                const ty = (t.clientY - rect.top) * (canvas.height / rect.height);
-                player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
-                
-                window.fireShotgun();
-            }
+            const side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
+            const ctrl = controls[side];
+            const dom = side === 'left' ? lStick : rStick;
+
+            ctrl.active = true;
+            ctrl.id = t.identifier;
+            ctrl.startX = t.clientX;
+            ctrl.startY = t.clientY;
+            
+            dom.style.display = 'block';
+            dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
+            dom.style.right = side === 'right' ? `${window.innerWidth - t.clientX - 40}px` : 'auto';
+            dom.style.top = `${t.clientY - 40}px`;
         }
     }, { passive: false });
 
-    canvas.addEventListener('touchmove', (e) => {
+    canvas.addEventListener('touchmove', e => {
         e.preventDefault();
         for (let t of e.changedTouches) {
-            if (joystick.active && t.clientX < window.innerWidth / 2) {
-                joystick.moveX = t.clientX - joystick.startX;
-                joystick.moveY = t.clientY - joystick.startY;
-            }
+            ['left', 'right'].forEach(side => {
+                const ctrl = controls[side];
+                if (ctrl.active && ctrl.id === t.identifier) {
+                    let mx = t.clientX - ctrl.startX;
+                    let my = t.clientY - ctrl.startY;
+                    const dist = Math.hypot(mx, my);
+                    const limit = 40;
+
+                    if (dist > limit) {
+                        mx = (mx / dist) * limit;
+                        my = (my / dist) * limit;
+                    }
+                    ctrl.moveX = mx;
+                    ctrl.moveY = my;
+
+                    const knob = side === 'left' ? lKnob : rKnob;
+                    knob.style.transform = `translate(${mx}px, ${my}px)`;
+                }
+            });
         }
     }, { passive: false });
 
-    canvas.addEventListener('touchend', (e) => {
+    canvas.addEventListener('touchend', e => {
         for (let t of e.changedTouches) {
-            if (t.clientX < window.innerWidth / 2) {
-                joystick.active = false;
-                joystick.moveX = 0;
-                joystick.moveY = 0;
-            }
+            ['left', 'right'].forEach(side => {
+                const ctrl = controls[side];
+                if (ctrl.id === t.identifier) {
+                    ctrl.active = false;
+                    ctrl.id = -1;
+                    ctrl.moveX = 0; ctrl.moveY = 0;
+                    const dom = side === 'left' ? lStick : rStick;
+                    const knob = side === 'left' ? lKnob : rKnob;
+                    dom.style.display = 'none';
+                    knob.style.transform = `translate(0,0)`;
+                }
+            });
         }
     });
 
-    // 5. 效能修補：在手機上降低粒子數量
-    const originalFire = window.fireShotgun;
-    window.fireShotgun = function() {
-        // 修改全局變量降低手機負擔
-        const prevPellets = window.PELLET_COUNT;
-        window.PELLET_COUNT = 4; // 減少彈丸
-        originalFire();
-        window.PELLET_COUNT = prevPellets;
-    };
-    
-    console.log("Hell-Gunner: Mobile Touch Patch Applied.");
+    // 5. 視覺優化：隱藏側邊欄以增加手機視野
+    document.getElementById('sidebar').style.position = 'fixed';
+    document.getElementById('sidebar').style.bottom = '0';
+    document.getElementById('sidebar').style.opacity = '0.7';
+    document.getElementById('sidebar').style.height = '60px';
+    document.getElementById('sidebar').style.width = '100vw';
+})();
+// --- 全螢幕與像素適配補丁 (Auto-Scale & High-DPI Patch) ---
+(function injectResponsiveCanvas() {
+    // 1. 強制 CSS 覆蓋：讓遊戲容器與畫布填滿螢幕
+    const style = document.createElement('style');
+    style.innerHTML = `
+        html, body { 
+            width: 100%; height: 100%; margin: 0; padding: 0; 
+            overflow: hidden; touch-action: none; position: fixed;
+        }
+        #game-container { 
+            width: 100vw; height: 100vh; border: none; 
+            display: flex; flex-direction: column; 
+        }
+        canvas { 
+            width: 100% !important; height: auto !important; 
+            flex-grow: 1; object-fit: contain; 
+            background: #000;
+        }
+        #sidebar { 
+            width: 100% !important; height: 80px !important; 
+            flex-direction: row !important; padding: 5px !important;
+            font-size: 10px; border: none; border-top: 2px solid #4a0000;
+            background: rgba(10, 0, 0, 0.9); z-index: 10;
+        }
+        .ui-box { margin: 0 5px !important; flex: 1; }
+        #radar-container, .controls { display: none !important; } /* 手機版隱藏雷達以省空間 */
+    `;
+    document.head.appendChild(style);
+
+    function resizeGame() {
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = window.innerWidth;
+        const displayHeight = window.innerHeight - 80; // 扣除底部 UI 欄
+
+        // 保持原本的遊戲邏輯比例 (1000:750 = 4:3)
+        // 如果想填滿全螢幕不留黑邊，可以直接用 displayWidth/Height
+        canvas.width = displayWidth * dpr;
+        canvas.height = displayHeight * dpr;
+
+        // 更新攝像機與繪製相關的縮放 (如果需要)
+        // 注意：這會改變你的視線範圍。若要保持遊戲難度一致，建議固定 Canvas 邏輯分辨率：
+        /* canvas.width = 1000; 
+        canvas.height = 750; 
+        */
+        
+        // 重新繪製以防畫面閃爍
+        if (typeof draw === "function") draw();
+    }
+
+    // 2. 監聽螢幕旋轉與縮放
+    window.addEventListener('resize', resizeGame);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(resizeGame, 300);
+    });
+
+    // 3. 初始執行一次
+    resizeGame();
+
+    // 4. 防止手機瀏覽器「下拉重新整理」或「左右滑動翻頁」
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1 || !gameStarted) return;
+        e.preventDefault();
+    }, { passive: false });
+
+    console.log("Hell-Gunner: Screen Adaptation Patch Applied.");
 })();
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
