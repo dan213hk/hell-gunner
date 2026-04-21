@@ -119,8 +119,14 @@ body {
     </style>
 </head>
 <body>
-<div id="joystick" class="joystick-container">
+
+<div id="joystick-left" class="joystick-container">
     <div id="knob" class="joystick-knob"></div>
+</div>
+
+<div id="joystick-right" class="joystick-container" style="left: auto; right: 50px; border-color: rgba(0, 255, 255, 0.3);">
+    <div id="knob-right" class="joystick-knob" style="background: rgba(0, 255, 255, 0.5);"></div>
+</div>
 </div>
 <div id="start-menu">
     <div class="menu-title">HELL-GUNNER</div>
@@ -165,7 +171,9 @@ body {
 </div>
 
 <script>
-
+let leftJoy = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, touchId: null };
+let rightJoy = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, touchId: null };
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 // --- 1. 音效引擎 ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
@@ -330,6 +338,90 @@ function getRandomEmptyPos(padding = 50) {
     return { x, y };
 }
 
+const leftContainer = document.getElementById('joystick-left');
+const leftKnob = document.getElementById('knob-left');
+const rightContainer = document.getElementById('joystick-right');
+const rightKnob = document.getElementById('knob-right');
+
+// 手機版顯示搖桿
+if (isMobile) {
+    leftContainer.style.display = 'block';
+    rightContainer.style.display = 'block';
+}
+
+// --- 2. 觸控核心監聽 ---
+window.addEventListener('touchstart', e => {
+    for (let touch of e.changedTouches) {
+        const lx = leftContainer.getBoundingClientRect();
+        const rx = rightContainer.getBoundingClientRect();
+
+        // 判定左搖桿
+        if (touch.clientX > lx.left && touch.clientX < lx.right && touch.clientY > lx.top && touch.clientY < lx.bottom) {
+            leftJoy.active = true;
+            leftJoy.touchId = touch.identifier;
+            leftJoy.startX = lx.left + lx.width / 2;
+            leftJoy.startY = lx.top + lx.height / 2;
+        }
+        // 判定右搖桿
+        if (touch.clientX > rx.left && touch.clientX < rx.right && touch.clientY > rx.top && touch.clientY < rx.bottom) {
+            rightJoy.active = true;
+            rightJoy.touchId = touch.identifier;
+            rightJoy.startX = rx.left + rx.width / 2;
+            rightJoy.startY = rx.top + rx.height / 2;
+        }
+    }
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+    e.preventDefault(); // 防止捲動
+    for (let touch of e.touches) {
+        const maxDist = 50;
+
+        // 左手：計算移動量
+        if (leftJoy.active && touch.identifier === leftJoy.touchId) {
+            let dx = touch.clientX - leftJoy.startX;
+            let dy = touch.clientY - leftJoy.startY;
+            let dist = Math.hypot(dx, dy);
+            if (dist > maxDist) { dx *= maxDist/dist; dy *= maxDist/dist; }
+            leftJoy.moveX = dx / maxDist;
+            leftJoy.moveY = dy / maxDist;
+            leftKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        }
+
+        // 右手：計算瞄準角度並自動開火
+        if (rightJoy.active && touch.identifier === rightJoy.touchId) {
+            let dx = touch.clientX - rightJoy.startX;
+            let dy = touch.clientY - rightJoy.startY;
+            let dist = Math.hypot(dx, dy);
+            if (dist > maxDist) { dx *= maxDist/dist; dy *= maxDist/dist; }
+            rightJoy.moveX = dx / maxDist;
+            rightJoy.moveY = dy / maxDist;
+            rightKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            // 只要右搖桿有在推，就更新玩家角度
+            if (dist > 5) {
+                player.angle = Math.atan2(dy, dx);
+                // 如果推動距離超過一半，自動開火 (模擬散彈槍狂轟)
+                if (dist > 25) fireShotgun();
+            }
+        }
+    }
+}, { passive: false });
+
+window.addEventListener('touchend', e => {
+    for (let touch of e.changedTouches) {
+        if (touch.identifier === leftJoy.touchId) {
+            leftJoy.active = false;
+            leftJoy.moveX = 0; leftJoy.moveY = 0;
+            leftKnob.style.transform = `translate(-50%, -50%)`;
+        }
+        if (touch.identifier === rightJoy.touchId) {
+            rightJoy.active = false;
+            rightJoy.moveX = 0; rightJoy.moveY = 0;
+            rightKnob.style.transform = `translate(-50%, -50%)`;
+        }
+    }
+});
 // --- 強化後的散彈槍特效邏輯 ---
 function fireShotgun() {
     if (player.shotTimer <= 0) {
@@ -487,11 +579,13 @@ function update() {
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
 
     // 搖桿控制 (手機)
-    if (isMobile) {
-        dx = joystickData.moveX * player.speed;
-        dy = joystickData.moveY * player.speed;
-    }
-
+if (isMobile) {
+    // 讀取新的左搖桿變數
+    dx = leftJoy.moveX * player.speed;
+    dy = leftJoy.moveY * player.speed;
+    
+    // 如果右搖桿在動，角度就交給右搖桿（這部分已在觸碰監聽器中寫好）
+}
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
     
@@ -956,90 +1050,7 @@ function startGame() {
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
-// --- 觸控控制變數修正 ---
-let isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-let joystickData = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
-const joyContainer = document.getElementById('joystick');
-const joyKnob = document.getElementById('knob');
 
-// 如果是手機，強制顯示搖桿
-if (isMobile) {
-    joyContainer.style.display = 'block';
-}
-
-// 偵測是否為觸控裝置
-window.addEventListener('touchstart', function detectTouch() {
-    isMobile = true;
-    joyContainer.style.display = 'block';
-    window.removeEventListener('touchstart', detectTouch);
-}, false);
-
-// --- 虛擬搖桿邏輯 ---
-joyContainer.addEventListener('touchstart', e => {
-    e.preventDefault(); // 防止長按彈出選單
-    joystickData.active = true;
-    const touch = e.touches[0];
-    const rect = joyContainer.getBoundingClientRect();
-    joystickData.startX = rect.left + rect.width / 2;
-    joystickData.startY = rect.top + rect.height / 2;
-}, { passive: false }); // 必須設為 passive: false 才能攔截預設行為
-
-window.addEventListener('touchmove', e => {
-    if (!joystickData.active) return;
-    e.preventDefault(); // 防止螢幕捲動
-
-    const touch = [...e.touches].find(t => t.target === joyContainer || joyContainer.contains(t.target));
-    if (!touch) return;
-
-    let dx = touch.clientX - joystickData.startX;
-    let dy = touch.clientY - joystickData.startY;
-    const dist = Math.hypot(dx, dy);
-    const maxDist = 50;
-
-    if (dist > maxDist) {
-        dx = (dx / dist) * maxDist;
-        dy = (dy / dist) * maxDist;
-    }
-
-    joystickData.moveX = dx / maxDist;
-    joystickData.moveY = dy / maxDist;
-    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-}, { passive: false });
-
-window.addEventListener('touchend', e => {
-    joystickData.active = false;
-    joystickData.moveX = 0;
-    joystickData.moveY = 0;
-    joyKnob.style.transform = `translate(-50%, -50%)`;
-});
-
-// --- 優化後的觸控射擊與轉向邏輯 ---
-const handleTouchAction = (e) => {
-    if (!gameStarted) return;
-    e.preventDefault(); 
-    
-    // 取得最後一個觸碰點（支持多指觸控時，右手點擊畫面的點）
-    const touch = e.touches[e.touches.length - 1];
-    const rect = canvas.getBoundingClientRect();
-    
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const tx = (touch.clientX - rect.left) * scaleX;
-    const ty = (touch.clientY - rect.top) * scaleY;
-    
-    // 更新玩家角度
-    player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
-    
-    // 如果是剛觸碰 (touchstart)，直接開火
-    if (e.type === 'touchstart') {
-        fireShotgun();
-    }
-};
-
-// 同時監聽「點擊」與「滑動」，實現按住螢幕轉向
-canvas.addEventListener('touchstart', handleTouchAction, { passive: false });
-canvas.addEventListener('touchmove', handleTouchAction, { passive: false });
 </script>
 
 </body>
