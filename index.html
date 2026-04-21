@@ -163,7 +163,7 @@ body {
     flex-direction: column;
     justify-content: center; /* 垂直置中 */
     align-items: center;     /* 水平置中 */
-    z-index: 1000;
+    z-index: 9999;
     transition: opacity 0.8s ease;
 }
 
@@ -1200,13 +1200,13 @@ let gameStarted = false;
 async function startGame() {
     if (gameStarted) return;
 
-    // 1. 立即解鎖音訊 (必須在點擊事件的第一行)
+    // 1. 解鎖音訊
     if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        await audioCtx.resume();
     }
     playSound('pickup');
 
-    // 2. 嘗試全螢幕與鎖定螢幕 (包裹在 try-catch 中避免崩潰)
+    // 2. 處理全螢幕 (改為非強制，出錯不中斷程式)
     const docElm = document.documentElement;
     try {
         if (docElm.requestFullscreen) {
@@ -1214,13 +1214,12 @@ async function startGame() {
         } else if (docElm.webkitRequestFullscreen) {
             await docElm.webkitRequestFullscreen();
         }
-
-        // 鎖定橫屏 (僅在全螢幕成功後嘗試)
+        
         if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape').catch(e => console.log("方向鎖定不支援"));
+            await screen.orientation.lock('landscape').catch(() => {});
         }
     } catch (e) {
-        console.log("全螢幕請求被攔截，但不影響遊戲開始");
+        console.warn("Fullscreen/Orientation lock failed:", e);
     }
 
     // 3. 隱藏選單
@@ -1228,14 +1227,13 @@ async function startGame() {
     menu.style.opacity = '0';
     setTimeout(() => {
         menu.style.display = 'none';
-        // 確保搖桿在手機上顯示
         if (isMobile) {
             document.getElementById('joystick-left').style.display = 'block';
             document.getElementById('joystick-right').style.display = 'block';
         }
     }, 500);
 
-    // 4. 啟動遊戲
+    // 4. 啟動遊戲 (確保這兩行一定會執行)
     gameStarted = true;
     requestAnimationFrame(loop); 
 }
