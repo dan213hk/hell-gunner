@@ -1556,6 +1556,121 @@ function startGame() {
 
     console.log("Hell-Gunner: Screen Adaptation Patch Applied.");
 })();
+// --- 橫向螢幕強制提示補丁 (Orientation Guard Patch) ---
+(function injectOrientationGuard() {
+    // 1. 建立提示層的樣式
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #orientation-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #4a0000 0%, #000 100%);
+            z-index: 9999; display: none; flex-direction: column;
+            justify-content: center; align-items: center; color: #ff0000;
+            font-family: 'Microsoft JhengHei', sans-serif; text-align: center;
+        }
+        .phone-icon {
+            width: 60px; height: 100px; border: 4px solid #ff0000;
+            border-radius: 10px; position: relative; margin-bottom: 20px;
+            animation: rotatePhone 2s ease-in-out infinite;
+        }
+        .phone-icon::after {
+            content: ''; position: absolute; width: 10px; height: 10px;
+            background: #ff0000; border-radius: 50%; bottom: 10px; left: 25px;
+        }
+        @keyframes rotatePhone {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-90deg); }
+            100% { transform: rotate(-90deg); }
+        }
+        .guard-text { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .guard-sub { font-size: 14px; color: #880000; margin-top: 10px; }
+    `;
+    document.head.appendChild(style);
+
+    // 2. 建立提示層 DOM
+    const overlay = document.createElement('div');
+    overlay.id = 'orientation-overlay';
+    overlay.innerHTML = `
+        <div class="phone-icon"></div>
+        <div class="guard-text">偵測到維度錯誤</div>
+        <div class="guard-sub">請旋轉手機進行橫向戰鬥</div>
+    `;
+    document.body.appendChild(overlay);
+
+    // 3. 檢查旋轉狀態的函數
+    function checkOrientation() {
+        // 判斷條件：如果高度大於寬度（直向）且是手機端
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile && isPortrait) {
+            overlay.style.display = 'flex';
+            // 暫停遊戲邏輯（如果需要）
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
+    // 4. 監聽旋轉與調整大小事件
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(checkOrientation, 200); // 延遲確保獲取正確的寬高
+    });
+
+    // 初始檢查
+    checkOrientation();
+
+    console.log("Hell-Gunner: Orientation Guard Active.");
+})();
+// --- 禁用縮放與預設手勢補丁 (Anti-Zoom & Gesture Lock Patch) ---
+(function lockViewport() {
+    // 1. 動態修改 Meta Viewport 標籤
+    // user-scalable=no 是關鍵，禁止用戶手動縮放
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.head.appendChild(meta);
+    }
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+
+    // 2. 攔截雙擊縮放 (Double-tap to zoom)
+    // 許多行動瀏覽器在 300ms 內點擊兩次會放大的預設行為
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // 3. 攔截多指縮放 (Pinch-to-zoom)
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // 4. 攔截手勢事件 (Safari 專用)
+    document.addEventListener('gesturestart', (e) => {
+        e.preventDefault();
+    });
+
+    // 5. 防止長按選取文字或彈出選單
+    const style = document.createElement('style');
+    style.innerHTML = `
+        * {
+            -webkit-touch-callout: none; /* 禁用長按選單 */
+            -webkit-user-select: none;   /* 禁用選取文字 */
+            user-select: none;
+            touch-action: none;          /* 核心：交由 JS 完全控制觸控行為 */
+        }
+    `;
+    document.head.appendChild(style);
+
+    console.log("Hell-Gunner: Viewport Locked. Anti-zoom active.");
+})();
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
