@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hell-Gunner">
+
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Hell-Gunner</title>
     <style>/* 針對手機橫屏狀態下的優化 */
 @media screen and (max-width: 900px) and (orientation: landscape) {
-    #game-container {
-        flex-direction: row; /* 確保橫向排列 */
-        border: none;
-    }
-    
     #sidebar {
         position: absolute;
         right: 0;
         top: 0;
-        width: 180px; /* 縮小側邊欄 */
-        height: 100%;
-        background: rgba(10, 0, 0, 0.6); /* 半透明，不遮擋視野 */
-        border-left: 2px solid #4a0000;
-        pointer-events: none; /* 點擊穿透，不影響右搖桿 */
+        width: 160px; /* 從 300px 縮小到 160px */
+        height: 100dvh;
+        background: rgba(10, 0, 0, 0.6); /* 增加透明度，讓背景若隱若現 */
+        border-left: 1px solid rgba(136, 0, 0, 0.5);
         padding: 10px;
+        pointer-events: none; /* 核心：防止側邊欄阻擋觸控，讓射擊更順暢 */
     }
 
     /* 在手機上隱藏較佔空間的文字說明 */
@@ -103,6 +103,10 @@ body {
     bottom: 12%;    /* 使用百分比，讓它在不同螢幕高度下位置相對統一 */
     width: 100px;   /* 稍微縮小一點點，適合手機操作 */
     height: 100px;
+}
+
+#joystick-left { left: 10%; }
+#joystick-right { right: 10%; left: auto; }
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 0, 0, 0.3);
     border-radius: 50%;
@@ -164,7 +168,7 @@ body {
     box-shadow: 0 0 30px #ff0000;
 }
         body { 
-            margin: 0; background: #000; color: #ff0000; 
+            margin: 0; padding: 0; background: #000; color: #ff0000; 
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
             display: flex; justify-content: center; align-items: center; 
             height: 100vh; overflow: hidden;
