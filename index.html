@@ -358,31 +358,7 @@ canvas.addEventListener('touchstart', e => {
 
 // --- 更新原本的 update 函數中的移動部分 ---
 // 找到原本的 update() 函數，將移動邏輯修改為：
-function update() {
-    if (player.hp <= 0) { alert("You are Dead."); location.reload(); return; }
-    
-    let dx = 0, dy = 0;
 
-    // 鍵盤控制
-    if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
-    if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
-
-    // 搖桿控制 (手機)
-    if (isMobile) {
-        dx = joystickData.moveX * player.speed;
-        dy = joystickData.moveY * player.speed;
-    }
-
-    if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
-    if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
-    
-    // 只有在非移動或滑鼠模式下更新角度 (避免手機移動時角度亂跳)
-    if (!isMobile) {
-        player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
-    }
-
-    // ... (其餘原本的 update 代碼保持不變)
-}
 class Particle {
     constructor(x, y, vx, vy, life, size, color, drag = 0.95) {
         this.x = x; this.y = y; this.vx = vx; this.vy = vy;
@@ -583,20 +559,43 @@ function initLevel() {
 }
 
 function update() {
-    if (player.hp <= 0) { alert("You are Dead."); location.reload(); return; }
+    // 死亡檢測
+    if (player.hp <= 0) { 
+        alert("You are Dead."); 
+        location.reload(); 
+        return; 
+    }
+    
     let dx = 0, dy = 0;
-    if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
-    if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
+
+    // --- 移動控制 (鍵盤與手機搖桿合併) ---
+    if (isMobile && (joystickData.moveX !== 0 || joystickData.moveY !== 0)) {
+        dx = joystickData.moveX * player.speed;
+        dy = joystickData.moveY * player.speed;
+    } else {
+        if (keys['KeyW']) dy -= player.speed; 
+        if (keys['KeyS']) dy += player.speed;
+        if (keys['KeyA']) dx -= player.speed; 
+        if (keys['KeyD']) dx += player.speed;
+    }
+
+    // 碰撞檢測
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
-    player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    
+    // 只有在非移動或滑鼠模式下更新角度
+    if (!isMobile) {
+        player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    }
+
+    // 武器狀態與鏡頭
     if (player.shotTimer > 0) player.shotTimer--;
     if (player.muzzleFlash > 0) player.muzzleFlash--;
-
     document.getElementById('reload-fill').style.width = ((SHOT_COOLDOWN - player.shotTimer) / SHOT_COOLDOWN * 100) + "%";
     camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
     camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
 
+    // 雷達掃描邏輯
     radarTimer++;
     if (radarTimer >= 180) { 
         radarTimer = 0; radarCircleRadius = 0;
@@ -627,9 +626,11 @@ function update() {
     lastRadarSnapshot.collectibles.forEach(c => { if(c.visibleTimer > 0) c.visibleTimer--; });
     if(lastRadarSnapshot.exit && lastRadarSnapshot.exit.visibleTimer > 0) lastRadarSnapshot.exit.visibleTimer--;
 
+    // 粒子與彈殼
     particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
     shells.forEach((s, i) => { s.vx *= 0.9; s.vy *= 0.9; s.x += s.vx; s.y += s.vy; s.angle += s.rot; s.life--; if(s.life <= 0) shells.splice(i, 1); });
 
+    // 收集物與出口
     collectibles.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) { 
             c.collected = true; updateUI(); 
@@ -638,14 +639,12 @@ function update() {
         }
     });
     if (exitPoint && Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 50) { 
-    // --- 修改這裡：在跳下一關前，先把目前的出口座標存成下一關的起點 ---
-    startPos = { x: exitPoint.x, y: exitPoint.y };
-    // ------------------------------------------------------------
-    
-    level++; 
-    initLevel(); 
-}
+        startPos = { x: exitPoint.x, y: exitPoint.y };
+        level++; 
+        initLevel(); 
+    }
 
+    // 敵人 AI
     enemies.forEach((en, idx) => {
         if (en.hp <= 0) { enemies.splice(idx, 1); return; }
         en.pathUpdate--;
@@ -663,23 +662,23 @@ function update() {
             let vx = Math.cos(moveAng) * en.speed, vy = Math.sin(moveAng) * en.speed;
             if (!isInsideWall(en.x + vx, en.y, en.size)) en.x += vx;
             if (!isInsideWall(en.x, en.y + vy, en.size)) en.y += vy;
-        } else if (en.biteTimer <= 0) { player.hp -= en.biteDmg; playSound('hit'); player.hitFlash = 15; player.shake = 30; en.biteTimer = 60;     for(let i = 0; i < 5; i++) {
-        decals.push({
-            // 讓血跡出現在玩家周圍
-            x: player.x + (Math.random() - 0.5) * 30,
-            y: player.y + (Math.random() - 0.5) * 30,
-            
-            // 玩家的血可以稍微大一點點，增加受傷感
-            size: 2 + Math.random() * 5,
-            
-            // 鮮紅色
-            color: '#800', 
-            alpha: 0.6
-        });
-    }
-    // ------------------------------------
-
-    updateUI();  }
+        } else if (en.biteTimer <= 0) { 
+            player.hp -= en.biteDmg; 
+            playSound('hit'); 
+            player.hitFlash = 15; 
+            player.shake = 30; 
+            en.biteTimer = 60;     
+            for(let i = 0; i < 5; i++) {
+                decals.push({
+                    x: player.x + (Math.random() - 0.5) * 30,
+                    y: player.y + (Math.random() - 0.5) * 30,
+                    size: 2 + Math.random() * 5,
+                    color: '#800', 
+                    alpha: 0.6
+                });
+            }
+            updateUI();  
+        }
         if (Math.abs(en.kX) > 0.1) { if (!isInsideWall(en.x + en.kX, en.y, en.size)) en.x += en.kX; en.kX *= 0.8; }
         if (Math.abs(en.kY) > 0.1) { if (!isInsideWall(en.x, en.y + en.kY, en.size)) en.y += en.kY; en.kY *= 0.8; }
         if (en.biteTimer > 0) en.biteTimer--;
