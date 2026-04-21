@@ -5,6 +5,26 @@
     <meta charset="UTF-8">
     <title>Hell-Gunner</title>
     <style>
+#game-container {
+    max-width: 100vw;
+    max-height: 100vh;
+    transform-origin: top left;
+}
+
+/* 手機版隱藏側邊欄或改為疊加，以增加可視空間 */
+@media (max-width: 768px) {
+    #sidebar {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 150px; /* 縮小側邊欄 */
+        height: auto;
+        background: rgba(10, 0, 0, 0.7);
+        border-left: none;
+        pointer-events: none; /* 讓點擊穿透，不影響射擊 */
+    }
+    .controls { display: none; } /* 手機版隱藏操作說明 */
+}
 body {
     -webkit-touch-callout: none; /* 停用系統預設選單 */
     -webkit-user-select: none;   /* 停用文字選取 */
@@ -98,6 +118,7 @@ body {
     </style>
 </head>
 <body>
+
 <div id="joystick" class="joystick-container">
     <div id="knob" class="joystick-knob"></div>
 </div>
@@ -256,11 +277,16 @@ let keys = {};
 
 let radarTimer = 0, radarCircleRadius = 0;
 let lastRadarSnapshot = { enemies: [], collectibles: [], exit: null };
-// --- 觸控控制變數 ---
-let isMobile = false;
+// --- 觸控控制變數修正 ---
+let isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 let joystickData = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
 const joyContainer = document.getElementById('joystick');
 const joyKnob = document.getElementById('knob');
+
+// 如果是手機，強制顯示搖桿
+if (isMobile) {
+    joyContainer.style.display = 'block';
+}
 
 // 偵測是否為觸控裝置
 window.addEventListener('touchstart', function detectTouch() {
@@ -271,12 +297,13 @@ window.addEventListener('touchstart', function detectTouch() {
 
 // --- 虛擬搖桿邏輯 ---
 joyContainer.addEventListener('touchstart', e => {
+    e.preventDefault(); // 防止長按彈出選單
     joystickData.active = true;
     const touch = e.touches[0];
     const rect = joyContainer.getBoundingClientRect();
     joystickData.startX = rect.left + rect.width / 2;
     joystickData.startY = rect.top + rect.height / 2;
-});
+}, { passive: false }); // 必須設為 passive: false 才能攔截預設行為
 
 window.addEventListener('touchmove', e => {
     if (!joystickData.active) return;
@@ -310,17 +337,23 @@ window.addEventListener('touchend', e => {
 // --- 右側點擊射擊邏輯 ---
 canvas.addEventListener('touchstart', e => {
     if (!gameStarted) return;
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
     
-    // 如果點擊是在畫布右半部或上方，觸發射擊
-    const tx = touch.clientX - rect.left;
-    const ty = touch.clientY - rect.top;
-    
-    // 更新玩家角度朝向觸控點
-    player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
-    
-    fireShotgun();
+    // 遍歷所有觸控點，找到不在搖桿區域的點
+    for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const rect = canvas.getBoundingClientRect();
+        
+        // 取得觸控點相對於 canvas 的位置
+        const tx = touch.clientX - rect.left;
+        const ty = touch.clientY - rect.top;
+
+        // 如果點擊是在畫布區域內（且不是搖桿位置）
+        if (tx > 0 && tx < rect.width && ty > 0 && ty < rect.height) {
+            // 更新玩家角度朝向該觸控點
+            player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
+            fireShotgun();
+        }
+    }
 }, { passive: false });
 
 // --- 更新原本的 update 函數中的移動部分 ---
@@ -983,7 +1016,13 @@ let gameStarted = false;
 
 function startGame() {
     if (gameStarted) return;
-    
+
+    // 嘗試進入全螢幕（在 Android 上效果較好）
+    const docElm = document.documentElement;
+    if (docElm.requestFullscreen) docElm.requestFullscreen();
+    else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
+
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
