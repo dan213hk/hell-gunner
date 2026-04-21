@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Hell-Gunner</title>
     <style>
@@ -456,13 +457,27 @@ function initLevel() {
 }
 
 function update() {
-    if (player.hp <= 0) { alert("You are Dead."); location.reload(); return; }
+    if (player.hp <= 0) { alert("任務失敗，請重新挑戰！"); location.reload(); return; }
+    
     let dx = 0, dy = 0;
+
+    // 鍵盤控制
     if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
+
+    // 搖桿控制 (手機)
+    if (isMobile) {
+        dx = joystickData.moveX * player.speed;
+        dy = joystickData.moveY * player.speed;
+    }
+
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
-    player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    
+    // 只有在非移動或滑鼠模式下更新角度 (避免手機移動時角度亂跳)
+    if (!isMobile) {
+        player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    }
     if (player.shotTimer > 0) player.shotTimer--;
     if (player.muzzleFlash > 0) player.muzzleFlash--;
 
@@ -913,6 +928,72 @@ function startGame() {
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
+// --- 觸控控制變數 ---
+let isMobile = false;
+let joystickData = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+const joyContainer = document.getElementById('joystick');
+const joyKnob = document.getElementById('knob');
+
+// 偵測是否為觸控裝置
+window.addEventListener('touchstart', function detectTouch() {
+    isMobile = true;
+    joyContainer.style.display = 'block';
+    window.removeEventListener('touchstart', detectTouch);
+}, false);
+
+// --- 虛擬搖桿邏輯 ---
+joyContainer.addEventListener('touchstart', e => {
+    joystickData.active = true;
+    const touch = e.touches[0];
+    const rect = joyContainer.getBoundingClientRect();
+    joystickData.startX = rect.left + rect.width / 2;
+    joystickData.startY = rect.top + rect.height / 2;
+});
+
+window.addEventListener('touchmove', e => {
+    if (!joystickData.active) return;
+    e.preventDefault(); // 防止螢幕捲動
+
+    const touch = [...e.touches].find(t => t.target === joyContainer || joyContainer.contains(t.target));
+    if (!touch) return;
+
+    let dx = touch.clientX - joystickData.startX;
+    let dy = touch.clientY - joystickData.startY;
+    const dist = Math.hypot(dx, dy);
+    const maxDist = 50;
+
+    if (dist > maxDist) {
+        dx = (dx / dist) * maxDist;
+        dy = (dy / dist) * maxDist;
+    }
+
+    joystickData.moveX = dx / maxDist;
+    joystickData.moveY = dy / maxDist;
+    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+}, { passive: false });
+
+window.addEventListener('touchend', e => {
+    joystickData.active = false;
+    joystickData.moveX = 0;
+    joystickData.moveY = 0;
+    joyKnob.style.transform = `translate(-50%, -50%)`;
+});
+
+// --- 右側點擊射擊邏輯 ---
+canvas.addEventListener('touchstart', e => {
+    if (!gameStarted) return;
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    
+    // 如果點擊是在畫布右半部或上方，觸發射擊
+    const tx = touch.clientX - rect.left;
+    const ty = touch.clientY - rect.top;
+    
+    // 更新玩家角度朝向觸控點
+    player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
+    
+    fireShotgun();
+}, { passive: false });
 </script>
 
 </body>
