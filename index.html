@@ -1,72 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Hell-Gunner</title>
     <style>
-#game-container {
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    position: relative; /* 讓側邊欄可以絕對定位 */
-    overflow: hidden;
-}
-
-canvas {
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* 保持比例，避免拉伸 */
-    background: #020000;
-    touch-action: none; /* 極其重要：禁止所有瀏覽器預設手勢 */
-}
-
-@media (max-width: 768px) {
-    #sidebar {
-        position: absolute;
-        right: 10px;
-        top: 10px;
-        width: 120px;
-        background: rgba(0, 0, 0, 0.6);
-        border: 1px solid #4a0000;
-        pointer-events: none; /* 讓 UI 不阻擋點擊射擊 */
-        font-size: 10px;
-    }
-    .ui-box { margin-bottom: 5px; }
-    .value { font-size: 14px; }
-    #radar-container { width: 100px; height: 80px; }
-    .controls { display: none; } /* 手機空間不足，隱藏說明 */
-}
-body {
-    -webkit-touch-callout: none; /* 停用系統預設選單 */
-    -webkit-user-select: none;   /* 停用文字選取 */
-    user-select: none;
-    touch-action: none;          /* 徹底防止瀏覽器下拉重新整理 */
-}
-/* 虛擬搖桿樣式 */
-.joystick-container {
-    position: absolute;
-    bottom: 50px;
-    left: 50px;
-    width: 120px;
-    height: 120px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 0, 0, 0.3);
-    border-radius: 50%;
-    display: none; /* 預設隱藏，偵測到觸控才顯示 */
-    touch-action: none;
-    z-index: 1000;
-}
-.joystick-knob {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 0, 0, 0.5);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-}
 /* 開始選單專用樣式 */
 #start-menu {
     position: absolute;
@@ -130,9 +67,6 @@ body {
     </style>
 </head>
 <body>
-<div id="joystick" class="joystick-container">
-    <div id="knob" class="joystick-knob"></div>
-</div>
 <div id="start-menu">
     <div class="menu-title">HELL-GUNNER</div>
     <div class="menu-subtitle">你能殺往第18層嗎？</div>
@@ -314,15 +248,7 @@ function isInsideWall(x, y, padding = 18) {
     }
     return (x < padding || x > WORLD.width - padding || y < padding || y > WORLD.height - padding);
 }
-function resizeCanvas() {
-    const visualWidth = window.innerWidth;
-    const visualHeight = window.innerHeight;
-    // 保持 4:3 或根據螢幕調整
-    canvas.style.width = visualWidth + 'px';
-    canvas.style.height = visualHeight + 'px';
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+
 function generateStaticMap() {
     walls = [];
     const t = 40; const door = 120;
@@ -478,9 +404,9 @@ function initLevel() {
         if (Math.hypot(pos.x - player.x, pos.y - player.y) < 600) continue;
         let type = Math.random();
         let en = (type < 0.15 && level > 1) ? 
-            { x: pos.x, y: pos.y, hp: 170, maxHp: 170, speed: 1.3, size: 28, color: '#300', eye: '#ff00ff', kbResist: 0.1, biteDmg: 40 } :
-            (type < 0.45 ? { x: pos.x, y: pos.y, hp: 25, maxHp: 25, speed: 3.4, size: 14, color: '#220', eye: '#ffff00', kbResist: 1.4, biteDmg: 10 } :
-            { x: pos.x, y: pos.y, hp: 55, maxHp: 55, speed: 2.2, size: 22, color: '#111', eye: '#ff0000', kbResist: 0.7, biteDmg: 18 });
+            { x: pos.x, y: pos.y, hp: 170, maxHp: 170, speed: 0.8, size: 28, color: '#300', eye: '#ff00ff', kbResist: 0.1, biteDmg: 40 } :
+            (type < 0.45 ? { x: pos.x, y: pos.y, hp: 25, maxHp: 25, speed: 2.2, size: 14, color: '#220', eye: '#ffff00', kbResist: 1.4, biteDmg: 10 } :
+            { x: pos.x, y: pos.y, hp: 55, maxHp: 55, speed: 1.5, size: 22, color: '#111', eye: '#ff0000', kbResist: 0.7, biteDmg: 18 });
         en.kX = 0; en.kY = 0; en.biteTimer = 0; en.angle = 0; en.targetX = player.x; en.targetY = player.y; en.pathUpdate = Math.random()*60;
         enemies.push(en);
     }
@@ -497,40 +423,13 @@ function initLevel() {
 }
 
 function update() {
-    if (player.hp <= 0) { alert("任務失敗，請重新挑戰！"); location.reload(); return; }
-    
+    if (player.hp <= 0) { alert("你已經被深淵吞噬，請重新挑戰！"); location.reload(); return; }
     let dx = 0, dy = 0;
-    if (isMobile && joystickData.active) {
-    // 增加一個緩衝區 (deadzone)
-    const deadzone = 0.1;
-    let mx = Math.abs(joystickData.moveX) > deadzone ? joystickData.moveX : 0;
-    let my = Math.abs(joystickData.moveY) > deadzone ? joystickData.moveY : 0;
-    
-    dx = mx * player.speed;
-    dy = my * player.speed;
-    
-    // 讓玩家面向移動方向 (如果右手沒在射擊)
-    if (!keys['mousedown']) {
-        player.angle = Math.atan2(my, mx);
-    }
-}
-    // 鍵盤控制
     if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
-
-    // 搖桿控制 (手機)
-    if (isMobile) {
-        dx = joystickData.moveX * player.speed;
-        dy = joystickData.moveY * player.speed;
-    }
-
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
-    
-    // 只有在非移動或滑鼠模式下更新角度 (避免手機移動時角度亂跳)
-    if (!isMobile) {
-        player.angle = Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
-    }
+    player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
     if (player.shotTimer > 0) player.shotTimer--;
     if (player.muzzleFlash > 0) player.muzzleFlash--;
 
@@ -571,12 +470,34 @@ function update() {
     particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
     shells.forEach((s, i) => { s.vx *= 0.9; s.vy *= 0.9; s.x += s.vx; s.y += s.vy; s.angle += s.rot; s.life--; if(s.life <= 0) shells.splice(i, 1); });
 
-    collectibles.forEach(c => {
-        if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) { 
-            c.collected = true; updateUI(); 
-            playSound('pickup');
-            if(collectibles.every(it => it.collected)) exitPoint = { x: exitTempPoint.x, y: exitTempPoint.y };
+collectibles.forEach(c => {
+    if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) { 
+        c.collected = true; 
+        
+        // --- [新增：隨機回血邏輯] ---
+        // 設定回血範圍，例如 10 到 25 點 HP
+        let healAmount = Math.floor(Math.random() * 16) + 10; 
+        player.hp = Math.min(100, player.hp + healAmount);
+        
+        // 視覺回饋：受傷紅光是紅色，回血可以用綠色閃爍
+        player.hitFlash = 10; // 借用閃爍機制，但我們可以改顏色或直接加一個特效
+        
+        // 浮動文字特效 (選配)：讓玩家知道回了多少血
+        for(let i=0; i<5; i++) {
+            particles.push(new Particle(
+                player.x, player.y, 
+                (Math.random()-0.5)*4, (Math.random()-0.5)*4, 
+                30, 4, '#00ffaa' // 綠色粒子
+            ));
         }
+        // --------------------------
+
+        updateUI(); 
+        playSound('pickup');
+        if(collectibles.every(it => it.collected)) {
+            exitPoint = { x: exitTempPoint.x, y: exitTempPoint.y };
+        }
+    }
     });
     if (exitPoint && Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 50) { 
     // --- 修改這裡：在跳下一關前，先把目前的出口座標存成下一關的起點 ---
@@ -781,7 +702,31 @@ ctx.fillStyle = '#daa520'; ctx.fillRect(-1, -2, 2, 4); ctx.restore(); });
     });
 
     // --- 敵人繪製邏輯：手電筒照到才顯示 ---
-    enemies.forEach(en => {
+    // 修改 enemies.forEach 內的移動邏輯
+enemies.forEach(en => {
+    // 增加一個「抽搐計時器」
+    en.twitchTimer = (en.twitchTimer || 0) - 1;
+    
+    let currentSpeed = en.speed;
+    
+    if (en.twitchTimer <= 0) {
+        // 隨機爆發速度或突然停頓
+        en.speedMult = Math.random() > 0.8 ? 2.5 : 0.4; 
+        en.twitchTimer = 10 + Math.random() * 20;
+    }
+    
+    let moveAng = Math.atan2(en.targetY - en.y, en.targetX - en.x);
+    let vx = Math.cos(moveAng) * (en.speed * (en.speedMult || 1));
+    let vy = Math.sin(moveAng) * (en.speed * (en.speedMult || 1));
+    
+// --- 僅修改抖動邏輯 ---
+let sx = (Math.random() - 0.5) * 2; // 計算 X 軸抖動量
+let sy = (Math.random() - 0.5) * 2; // 計算 Y 軸抖動量
+
+// 移動前先檢查牆壁
+if (!isInsideWall(en.x + vx + sx, en.y, en.size)) en.x += vx + sx;
+if (!isInsideWall(en.x, en.y + vy + sy, en.size)) en.y += vy + sy;
+// --------------------
         // 1. 計算距離與角度
         let dx = en.x - player.x;
         let dy = en.y - player.y;
@@ -797,9 +742,21 @@ ctx.fillStyle = '#daa520'; ctx.fillRect(-1, -2, 2, 4); ctx.restore(); });
         let flashlightAngle = 0.2; // 寬度
         let proximityRange = 80;   // 貼身強制可見範圍
 
-        if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityRange) {
-            isVisible = true;
+if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityRange) {
+    // 預設為可見，但如果被牆擋住就變不可見
+    isVisible = true; 
+
+    // 從玩家到敵人連一條線，檢查中間是否有牆
+    // 每隔 15 像素檢查一次，確保不會漏掉薄牆
+    for (let d = 10; d < dist; d += 15) {
+        let cx = player.x + Math.cos(angleToEnemy) * d;
+        let cy = player.y + Math.sin(angleToEnemy) * d;
+        if (isInsideWall(cx, cy, 2)) {
+            isVisible = false; // 發現牆壁，隱藏怪物
+            break;
         }
+    }
+}
 
         // 4. 如果可見，才執行繪製
         if (isVisible) {
@@ -939,15 +896,7 @@ function updateUI() {
     document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
 }
 
-window.addEventListener('mousemove', e => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    // 儲存滑鼠在遊戲世界中的絕對位置
-    mousePos.x = (e.clientX - rect.left) * scaleX + camera.x;
-    mousePos.y = (e.clientY - rect.top) * scaleY + camera.y;
-});
+window.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; });
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 window.addEventListener('mousedown', e => { 
@@ -965,13 +914,6 @@ let gameStarted = false;
 
 function startGame() {
     if (gameStarted) return;
-
-    // 嘗試進入全螢幕（在 Android 上效果較好）
-    const docElm = document.documentElement;
-    if (docElm.requestFullscreen) docElm.requestFullscreen();
-    else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
-
-    if (audioCtx.state === 'suspended') audioCtx.resume();
     
     // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
     if (audioCtx.state === 'suspended') {
@@ -992,85 +934,514 @@ function startGame() {
     gameStarted = true;
     loop(); 
 }
+// --- 地獄視覺強化補丁 ---
+(function injectHorrorEffects() {
+    const originalUpdate = window.update;
+    const originalDraw = window.draw;
 
+    window.update = function() {
+        originalUpdate();
+
+        // 1. 受傷怪物血跡拖尾 (保留並優化)
+        enemies.forEach(en => {
+            if (en.hp < en.maxHp && en.hp > 0 && Math.random() > 0.85) {
+                decals.push({
+                    x: en.x + (Math.random() - 0.5) * 10,
+                    y: en.y + (Math.random() - 0.5) * 10,
+                    size: 1.5 + Math.random() * 2,
+                    color: '#500',
+                    alpha: 0.4
+                });
+            }
+        });
+
+        // 2. 玩家受傷時的視線模糊 (當 HP 低於 40)
+        if (player.hp < 40 && Math.random() > 0.95) {
+            player.shake += 5; // 產生隨機的生理性顫抖
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製
+        originalDraw();
+
+        // 3. 手電筒光暈不穩定感 (微弱閃爍)
+        if (gameStarted && Math.random() > 0.99) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 4. 生存壓力：螢幕邊緣血暈 (Vignette)
+        // 隨著 HP 降低，螢幕四周的紅邊會越來越明顯
+        if (player.hp < 100) {
+            let stress = (100 - player.hp) / 100;
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            grad.addColorStop(1, `rgba(136, 0, 0, ${stress * 0.5})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 5. 怪物死亡後的「餘溫」 (在雷達上留下短暫殘影)
+        // 這會讓玩家分不清怪物是否真的死透了
+        if (Math.random() > 0.98 && enemies.length > 0) {
+             let ghost = enemies[Math.floor(Math.random() * enemies.length)];
+             particles.push(new Particle(ghost.x, ghost.y, 0, 0, 20, 2, '#400', 1));
+        }
+    };
+})();
+// --- 地獄細節強化補丁 (Splatter & Footprints) ---
+(function injectAdvancedHorror() {
+    const originalUpdate = window.update;
+    let bloodOnBoots = 0; // 玩家鞋子沾血程度
+
+    window.update = function() {
+        // 在執行原始邏輯前，紀錄敵人數量來偵測死亡
+        const enemyCountBefore = enemies.length;
+        const enemyPositions = enemies.map(e => ({x: e.x, y: e.y, hp: e.hp}));
+
+        originalUpdate();
+
+        // 1. 死亡大噴濺：偵測誰剛死掉
+        enemyPositions.forEach((oldEn, i) => {
+            // 檢查該位置的敵人是否消失或 HP 歸零
+            const stillAlive = enemies.some(e => Math.hypot(e.x - oldEn.x, e.y - oldEn.y) < 5);
+            if (!stillAlive && oldEn.hp > 0) {
+                for (let j = 0; j < 8; j++) {
+                    decals.push({
+                        x: oldEn.x + (Math.random() - 0.5) * 40,
+                        y: oldEn.y + (Math.random() - 0.5) * 40,
+                        size: 5 + Math.random() * 8,
+                        color: '#400',
+                        alpha: 0.5
+                    });
+                }
+            }
+        });
+
+        // 2. 血腳印邏輯
+        // 檢查玩家是否踩在血跡（decals）上
+        const onBlood = decals.some(d => Math.hypot(player.x - d.x, player.y - d.y) < 20);
+        if (onBlood) bloodOnBoots = 15; // 踩到血，鞋子沾滿血
+
+        if (bloodOnBoots > 0) {
+            // 移動一段距離留下一個腳印
+            if ((keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD']) && Math.random() > 0.8) {
+                decals.push({
+                    x: player.x,
+                    y: player.y,
+                    size: 3,
+                    color: '#300',
+                    alpha: (bloodOnBoots / 15) * 0.3
+                });
+                bloodOnBoots--;
+            }
+        }
+    };
+
+    const originalDraw = window.draw;
+    window.draw = function() {
+        originalDraw();
+
+        // 3. 黑暗呼吸感 (環境壓迫)
+        if (gameStarted) {
+            let breath = Math.sin(Date.now() / 1500) * 0.05;
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * (0.4 + breath),
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.9
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    };
+})();
+// --- 地獄視覺補丁：深紅暈眩與幽靈幻影 ---
+(function injectCrimsonTrauma() {
+    const originalDraw = window.draw;
+    const originalPlaySound = window.playSound;
+    let bloodTrauma = 0; // 用於控制受傷後的暈眩程度
+
+    // 2. 攔截音效：當被攻擊時觸發深紅暈眩
+    window.playSound = function(type) {
+        originalPlaySound(type);
+        if (type === 'hit') {
+            bloodTrauma = 40; // 設定暈眩強度 (深紅色深淺)
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製
+        originalDraw();
+
+        // 3. 地獄幻影 (心理壓迫) - 保留原本模糊黑影效果
+        if (gameStarted && Math.random() > 0.997) {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            
+            let ghostAng = player.angle + Math.PI + (Math.random() - 0.5) * 2;
+            let dist = 180 + Math.random() * 120;
+            let gx = player.x + Math.cos(ghostAng) * dist;
+            let gy = player.y + Math.sin(ghostAng) * dist;
+            
+            ctx.globalAlpha = 0.12;
+            ctx.fillStyle = '#000';
+            ctx.filter = 'blur(5px)'; 
+            ctx.beginPath();
+            ctx.ellipse(gx, gy, 10, 20, Math.random() * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 2. 受傷視覺深紅暈眩 (Crimson Vignette & Grayscale)
+        if (bloodTrauma > 0) {
+            // A. 深紅色邊框暈眩 (Vignette) - 模擬視野被血色侵佔
+            ctx.save();
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.2,
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)'); // 中心透明
+            grad.addColorStop(1, `rgba(100, 0, 0, ${bloodTrauma / 60})`); // 邊緣深紅
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // B. 畫面失焦與灰階 - 模擬重創瞬間的生理反應
+            // 使用 CSS Filter 實現動態灰階與模糊
+            // 灰階讓世界失去生機，模糊模擬暈眩
+            // 灰階程度與模糊程度隨 bloodTrauma 遞減
+            canvas.style.filter = `grayscale(${bloodTrauma * 2.5}%) blur(${bloodTrauma / 8}px)`;
+            bloodTrauma -= 0.6; // 緩慢恢復 (數值越小恢復越慢)
+        } else {
+            // 完全恢復後移除 Filter
+            canvas.style.filter = 'none';
+        }
+    };
+})();
+// --- 地獄視覺補丁：生理心跳與環境噪點 ---
+(function injectVisceralHorror() {
+    const originalDraw = window.draw;
+    const originalUpdate = window.update;
+
+    window.update = function() {
+        originalUpdate();
+        
+        // 1. 生理性顫抖：當 HP 低於 30% 時，玩家移動會伴隨不穩定的震動
+        if (player.hp < 30 && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'])) {
+            player.shake += 0.5;
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製（包含你之前加的深紅暈眩與幻影）
+        originalDraw();
+
+        // 2. 垂死心跳視覺 (Pulsing Distress)
+        // 當 HP 低於 40% 時，畫面會隨心跳律動縮放，模擬失血過多時的耳鳴與視覺跳動
+        if (gameStarted && player.hp < 40) {
+            // 心跳頻率隨血量降低而加快
+            let pulseSpeed = player.hp < 15 ? 150 : 300;
+            let pulse = Math.sin(Date.now() / pulseSpeed) * 0.02;
+            canvas.style.transform = `scale(${1 + pulse})`;
+            
+            // 隨心跳同步噴出微弱紅光
+            if (pulse > 0.015) {
+                ctx.save();
+                ctx.globalAlpha = 0.1;
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        } else if (player.hp >= 40) {
+            canvas.style.transform = `scale(1)`;
+        }
+
+        // 3. 環境噪點 (Film Grain & Static)
+        // 模擬一種被詛咒的錄影帶質感，增加畫面的顆粒感與不穩定性
+        if (gameStarted) {
+            ctx.save();
+            ctx.globalAlpha = 0.04; // 極輕微，增加質感但不擋視線
+            for (let i = 0; i < 8; i++) {
+                // 隨機紅/白色橫紋干擾
+                ctx.fillStyle = Math.random() > 0.5 ? '#f00' : '#fff';
+                ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 1);
+            }
+            
+            // 隨機噪點顆粒
+            for (let i = 0; i < 50; i++) {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+            }
+            ctx.restore();
+        }
+    };
+})();
+// --- 地獄空間感與動態照明補丁 ---
+(function injectVolumetricHell() {
+    const originalDraw = window.draw;
+    const originalFire = window.fireShotgun;
+    let flashIntensity = 0; // 控制開槍瞬間的亮度
+
+    // 1. 槍口火光：開槍時瞬間提高環境亮度
+    window.fireShotgun = function() {
+        originalFire();
+        flashIntensity = 1.0; // 瞬間滿亮度
+    };
+
+    window.draw = function() {
+        // 在原始繪製前處理火光閃爍
+        if (flashIntensity > 0) {
+            ctx.save();
+            ctx.globalAlpha = flashIntensity * 0.2;
+            ctx.fillStyle = '#ffaa44'; // 暖色調火光
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            flashIntensity -= 0.15; // 火光快速消退
+        }
+
+        originalDraw();
+
+        // 2. 手電筒光束塵埃 (Dust Motes)
+        if (gameStarted) {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#fff';
+            
+            for (let i = 0; i < 20; i++) {
+                // 只在玩家前方的一定範圍內生成塵埃
+                let dustAng = player.angle + (Math.random() - 0.5) * 1.5;
+                let dist = Math.random() * 300;
+                let dx = player.x + Math.cos(dustAng) * dist;
+                let dy = player.y + Math.sin(dustAng) * dist;
+                
+                // 塵埃微弱地上下浮動
+                let drift = Math.sin(Date.now() / 1000 + i) * 5;
+                ctx.beginPath();
+                ctx.arc(dx, dy + drift, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 3. 雷達虛假殘影 (Ghost Blips)
+        // 當 HP < 50% 時，雷達會隨機出現短暫的虛假紅點
+        if (gameStarted && player.hp < 50 && Math.random() > 0.98) {
+            let rx = 20 + Math.random() * 110;
+            let ry = 20 + Math.random() * 110;
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(rx, ry, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    };
+})();
+// --- 地獄視覺補丁：僅保留槍火震動模糊 ---
+(function injectMuzzleBlurOnly() {
+    const originalDraw = window.draw;
+    const originalFire = window.fireShotgun;
+    let blastBlur = 0; // 控制模糊強度
+
+    // 攔截開槍動作
+    window.fireShotgun = function() {
+        originalFire();
+        blastBlur = 12; // 開槍瞬間設定模糊起始值
+    };
+
+    window.draw = function() {
+        // 在繪製前應用 CSS 濾鏡效果
+        if (blastBlur > 0) {
+            // 模擬震動與強光感：結合模糊與亮度提升
+            canvas.style.filter = `blur(${blastBlur}px) brightness(${1 + blastBlur/15})`;
+            blastBlur -= 1.5; // 模糊快速消退
+        } else {
+            // 恢復正常視野（除非有其他受傷特效正在運行）
+            if (player.hp >= 30) {
+                canvas.style.filter = 'none';
+            }
+        }
+
+        originalDraw();
+    };
+})();
+// --- 生理反饋補丁：視網膜噴血與滴落效果 ---
+(function injectVisceralBloodSplatter() {
+    const originalDraw = window.draw;
+    let lastPlayerHP = 100; // 記錄上次的 HP 用於比對受傷
+    window.screenBloods = []; // 存放螢幕上的血跡粒子
+
+    window.draw = function() {
+        // 1. 檢測玩家受傷（HP 減少）
+        if (gameStarted && player.hp < lastPlayerHP) {
+            let damage = lastPlayerHP - player.hp;
+            // 根據受傷程度生成 3-8 個血斑
+            let numSplats = Math.min(8, Math.max(3, Math.floor(damage / 5)));
+            
+            for (let i = 0; i < numSplats; i++) {
+                window.screenBloods.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    // 血斑大小隨機
+                    size: 15 + Math.random() * 25,
+                    // 隨機生命值（存留時間）
+                    life: 150 + Math.random() * 100,
+                    // 滴落速度（HP 越低，滴越快，模擬虛弱）
+                    vel: 0.5 + (1 - player.hp / 100) * 1.5,
+                    opacity: 0.8
+                });
+            }
+        }
+        lastPlayerHP = player.hp;
+
+        originalDraw(); // 繪製原本遊戲畫面
+
+        // 2. 繪製並更新視網膜血跡 (螢幕 HUD 層)
+        if (gameStarted && window.screenBloods.length > 0) {
+            ctx.save();
+            // 確保血跡黏在螢幕上，不受攝像機移動影響
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            
+            for (let i = window.screenBloods.length - 1; i >= 0; i--) {
+                let b = window.screenBloods[i];
+                
+                // 繪製血斑（深暗紅色渐層，邊緣模糊）
+                let grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.size);
+                grad.addColorStop(0, `rgba(100, 0, 0, ${b.opacity})`);
+                grad.addColorStop(0.7, `rgba(60, 0, 0, ${b.opacity * 0.8})`);
+                grad.addColorStop(1, 'rgba(40, 0, 0, 0)');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 滴落邏輯：血斑緩緩向下移動
+                b.y += b.vel;
+                
+                // 生命週期管理
+                b.life--;
+                // 在生命最後階段緩緩淡出
+                if (b.life < 50) {
+                    b.opacity -= 0.016;
+                }
+
+                // 移除死亡的血跡
+                if (b.opacity <= 0) {
+                    window.screenBloods.splice(i, 1);
+                }
+            }
+            ctx.restore();
+        }
+    };
+})();
+// --- 行動端觸控補丁 (Mobile Touch Patch) ---
+(function injectMobileControls() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    // 1. 強制樣式調整：確保遊戲填滿手機螢幕
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #game-container { flex-direction: column; width: 100vw; height: 100vh; border: none; }
+        #sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; padding: 5px; font-size: 10px; border-left: none; border-top: 2px solid #4a0000; }
+        .ui-box { width: 48%; margin-bottom: 5px; margin-right: 2%; }
+        #radar-container, .controls { display: none; }
+        canvas { width: 100vw !important; height: auto !important; touch-action: none; }
+        .menu-title { font-size: 40px; }
+    `;
+    document.head.appendChild(style);
+
+    // 2. 虛擬搖桿狀態
+    let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+    
+    // 3. 覆蓋原本的 Update 邏輯，注入觸控位移
+    const originalUpdate = window.update;
+    window.update = function() {
+        if (joystick.active) {
+            const dist = Math.hypot(joystick.moveX, joystick.moveY);
+            if (dist > 5) {
+                const angle = Math.atan2(joystick.moveY, joystick.moveX);
+                const speed = player.speed;
+                let dx = Math.cos(angle) * speed;
+                let dy = Math.sin(angle) * speed;
+                
+                if (!isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
+                if (!isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
+                
+                // 行動端自動朝向移動方向
+                player.angle = angle;
+            }
+        }
+        originalUpdate();
+    };
+
+    // 4. 監聽觸控事件
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!gameStarted) return;
+
+        for (let t of e.changedTouches) {
+            // 左半螢幕：移動搖桿
+            if (t.clientX < window.innerWidth / 2) {
+                joystick.active = true;
+                joystick.startX = t.clientX;
+                joystick.startY = t.clientY;
+            } 
+            // 右半螢幕：射擊
+            else {
+                // 更新射擊角度為當前觸控點相對於玩家位置
+                const rect = canvas.getBoundingClientRect();
+                const tx = (t.clientX - rect.left) * (canvas.width / rect.width);
+                const ty = (t.clientY - rect.top) * (canvas.height / rect.height);
+                player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
+                
+                window.fireShotgun();
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        for (let t of e.changedTouches) {
+            if (joystick.active && t.clientX < window.innerWidth / 2) {
+                joystick.moveX = t.clientX - joystick.startX;
+                joystick.moveY = t.clientY - joystick.startY;
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        for (let t of e.changedTouches) {
+            if (t.clientX < window.innerWidth / 2) {
+                joystick.active = false;
+                joystick.moveX = 0;
+                joystick.moveY = 0;
+            }
+        }
+    });
+
+    // 5. 效能修補：在手機上降低粒子數量
+    const originalFire = window.fireShotgun;
+    window.fireShotgun = function() {
+        // 修改全局變量降低手機負擔
+        const prevPellets = window.PELLET_COUNT;
+        window.PELLET_COUNT = 4; // 減少彈丸
+        originalFire();
+        window.PELLET_COUNT = prevPellets;
+    };
+    
+    console.log("Hell-Gunner: Mobile Touch Patch Applied.");
+})();
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
-// --- 觸控控制變數修正 ---
-let isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-let joystickData = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
-const joyContainer = document.getElementById('joystick');
-const joyKnob = document.getElementById('knob');
-
-// 如果是手機，強制顯示搖桿
-if (isMobile) {
-    joyContainer.style.display = 'block';
-}
-
-// 偵測是否為觸控裝置
-window.addEventListener('touchstart', function detectTouch() {
-    isMobile = true;
-    joyContainer.style.display = 'block';
-    window.removeEventListener('touchstart', detectTouch);
-}, false);
-
-// --- 虛擬搖桿邏輯 ---
-joyContainer.addEventListener('touchstart', e => {
-    e.preventDefault(); // 防止長按彈出選單
-    joystickData.active = true;
-    const touch = e.touches[0];
-    const rect = joyContainer.getBoundingClientRect();
-    joystickData.startX = rect.left + rect.width / 2;
-    joystickData.startY = rect.top + rect.height / 2;
-}, { passive: false }); // 必須設為 passive: false 才能攔截預設行為
-
-window.addEventListener('touchmove', e => {
-    if (!joystickData.active) return;
-    e.preventDefault(); // 防止螢幕捲動
-
-    const touch = [...e.touches].find(t => t.target === joyContainer || joyContainer.contains(t.target));
-    if (!touch) return;
-
-    let dx = touch.clientX - joystickData.startX;
-    let dy = touch.clientY - joystickData.startY;
-    const dist = Math.hypot(dx, dy);
-    const maxDist = 50;
-
-    if (dist > maxDist) {
-        dx = (dx / dist) * maxDist;
-        dy = (dy / dist) * maxDist;
-    }
-
-    joystickData.moveX = dx / maxDist;
-    joystickData.moveY = dy / maxDist;
-    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-}, { passive: false });
-
-window.addEventListener('touchend', e => {
-    joystickData.active = false;
-    joystickData.moveX = 0;
-    joystickData.moveY = 0;
-    joyKnob.style.transform = `translate(-50%, -50%)`;
-});
-
-// --- 右側點擊射擊邏輯 ---
-canvas.addEventListener('touchstart', e => {
-    if (!gameStarted) return;
-    
-    // 遍歷所有觸控點，尋找非搖桿區域的點
-    for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        const rect = canvas.getBoundingClientRect();
-        const tx = (touch.clientX - rect.left) * (canvas.width / rect.width);
-        const ty = (touch.clientY - rect.top) * (canvas.height / rect.height);
-
-        // 如果觸控點在螢幕右側（非搖桿區）
-        if (touch.clientX > window.innerWidth / 3) {
-            player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
-            fireShotgun();
-        }
-    }
-}, { passive: false });
 </script>
 
 </body>
