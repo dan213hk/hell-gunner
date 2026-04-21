@@ -1200,44 +1200,42 @@ let gameStarted = false;
 async function startGame() {
     if (gameStarted) return;
 
-    // 1. 解鎖音訊
+    // 1. 優先解鎖音訊 (這是 iOS 播放聲音的關鍵)
     if (audioCtx.state === 'suspended') {
         await audioCtx.resume();
     }
+    
+    // 嘗試播放一個無聲或極短的聲音來測試
     playSound('pickup');
 
-    // 2. 處理全螢幕 (改為非強制，出錯不中斷程式)
-    const docElm = document.documentElement;
-    try {
-        if (docElm.requestFullscreen) {
-            await docElm.requestFullscreen();
-        } else if (docElm.webkitRequestFullscreen) {
-            await docElm.webkitRequestFullscreen();
-        }
-        
-        if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape').catch(() => {});
-        }
-    } catch (e) {
-        console.warn("Fullscreen/Orientation lock failed:", e);
-    }
-
-    // 3. 隱藏選單
+    // 2. 隱藏選單 (先讓畫面變動，增加回饋感)
     const menu = document.getElementById('start-menu');
     menu.style.opacity = '0';
-    setTimeout(() => {
-        menu.style.display = 'none';
-        if (isMobile) {
-            document.getElementById('joystick-left').style.display = 'block';
-            document.getElementById('joystick-right').style.display = 'block';
-        }
-    }, 500);
+    setTimeout(() => { menu.style.display = 'none'; }, 500);
 
-    // 4. 啟動遊戲 (確保這兩行一定會執行)
+    // 3. 處理全螢幕與轉向 (分開處理，失敗不影響遊戲啟動)
+    try {
+        const docElm = document.documentElement;
+        if (docElm.requestFullscreen) await docElm.requestFullscreen();
+        else if (docElm.webkitRequestFullscreen) await docElm.webkitRequestFullscreen();
+    } catch (e) { console.log("全螢幕請求被拒絕"); }
+
+    try {
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape').catch(err => console.log("轉向鎖定失敗"));
+        }
+    } catch (e) { console.log("轉向 API 不支援"); }
+
+    // 4. 強制啟動遊戲循環 (確保不論全螢幕成功與否都會開始)
     gameStarted = true;
+    if (isMobile) {
+        document.getElementById('joystick-left').style.display = 'block';
+        document.getElementById('joystick-right').style.display = 'block';
+    }
+    
+    console.log("遊戲正式啟動");
     requestAnimationFrame(loop); 
 }
-
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
