@@ -1200,43 +1200,44 @@ let gameStarted = false;
 async function startGame() {
     if (gameStarted) return;
 
-    const docElm = document.documentElement;
-    
-    try {
-        // 1. 進入全螢幕
-        if (docElm.requestFullscreen) {
-            await docElm.requestFullscreen();
-        } else if (docElm.webkitRequestFullScreen) {
-            await docElm.webkitRequestFullScreen();
-        }
-
-        // 2. 鎖定橫屏 (僅在全螢幕下有效)
-        if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock('landscape').catch(err => {
-                console.log("方向鎖定被拒絕: ", err);
-            });
-        }
-    } catch (e) {
-        console.log("全螢幕或鎖定失敗: ", e);
-    }
-    // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
+    // 1. 立即解鎖音訊 (必須在點擊事件的第一行)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    
-    // 2. 播放一個初始音效增加回饋感
     playSound('pickup');
-    
+
+    // 2. 嘗試全螢幕與鎖定螢幕 (包裹在 try-catch 中避免崩潰)
+    const docElm = document.documentElement;
+    try {
+        if (docElm.requestFullscreen) {
+            await docElm.requestFullscreen();
+        } else if (docElm.webkitRequestFullscreen) {
+            await docElm.webkitRequestFullscreen();
+        }
+
+        // 鎖定橫屏 (僅在全螢幕成功後嘗試)
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape').catch(e => console.log("方向鎖定不支援"));
+        }
+    } catch (e) {
+        console.log("全螢幕請求被攔截，但不影響遊戲開始");
+    }
+
     // 3. 隱藏選單
     const menu = document.getElementById('start-menu');
     menu.style.opacity = '0';
     setTimeout(() => {
         menu.style.display = 'none';
-    }, 800);
-    
-    // 4. 正式啟動遊戲循環
+        // 確保搖桿在手機上顯示
+        if (isMobile) {
+            document.getElementById('joystick-left').style.display = 'block';
+            document.getElementById('joystick-right').style.display = 'block';
+        }
+    }, 500);
+
+    // 4. 啟動遊戲
     gameStarted = true;
-    loop(); 
+    requestAnimationFrame(loop); 
 }
 
 // 移除原本最底部的 loop(); 呼叫
