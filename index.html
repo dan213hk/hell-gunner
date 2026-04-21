@@ -6,24 +6,36 @@
     <title>Hell-Gunner</title>
     <style>
 #game-container {
-    max-width: 100vw;
-    max-height: 100vh;
-    transform-origin: top left;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    position: relative; /* 讓側邊欄可以絕對定位 */
+    overflow: hidden;
 }
 
-/* 手機版隱藏側邊欄或改為疊加，以增加可視空間 */
+canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 保持比例，避免拉伸 */
+    background: #020000;
+    touch-action: none; /* 極其重要：禁止所有瀏覽器預設手勢 */
+}
+
 @media (max-width: 768px) {
     #sidebar {
         position: absolute;
-        right: 0;
-        top: 0;
-        width: 150px; /* 縮小側邊欄 */
-        height: auto;
-        background: rgba(10, 0, 0, 0.7);
-        border-left: none;
-        pointer-events: none; /* 讓點擊穿透，不影響射擊 */
+        right: 10px;
+        top: 10px;
+        width: 120px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid #4a0000;
+        pointer-events: none; /* 讓 UI 不阻擋點擊射擊 */
+        font-size: 10px;
     }
-    .controls { display: none; } /* 手機版隱藏操作說明 */
+    .ui-box { margin-bottom: 5px; }
+    .value { font-size: 14px; }
+    #radar-container { width: 100px; height: 80px; }
+    .controls { display: none; } /* 手機空間不足，隱藏說明 */
 }
 body {
     -webkit-touch-callout: none; /* 停用系統預設選單 */
@@ -302,7 +314,15 @@ function isInsideWall(x, y, padding = 18) {
     }
     return (x < padding || x > WORLD.width - padding || y < padding || y > WORLD.height - padding);
 }
-
+function resizeCanvas() {
+    const visualWidth = window.innerWidth;
+    const visualHeight = window.innerHeight;
+    // 保持 4:3 或根據螢幕調整
+    canvas.style.width = visualWidth + 'px';
+    canvas.style.height = visualHeight + 'px';
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 function generateStaticMap() {
     walls = [];
     const t = 40; const door = 120;
@@ -480,7 +500,20 @@ function update() {
     if (player.hp <= 0) { alert("任務失敗，請重新挑戰！"); location.reload(); return; }
     
     let dx = 0, dy = 0;
-
+    if (isMobile && joystickData.active) {
+    // 增加一個緩衝區 (deadzone)
+    const deadzone = 0.1;
+    let mx = Math.abs(joystickData.moveX) > deadzone ? joystickData.moveX : 0;
+    let my = Math.abs(joystickData.moveY) > deadzone ? joystickData.moveY : 0;
+    
+    dx = mx * player.speed;
+    dy = my * player.speed;
+    
+    // 讓玩家面向移動方向 (如果右手沒在射擊)
+    if (!keys['mousedown']) {
+        player.angle = Math.atan2(my, mx);
+    }
+}
     // 鍵盤控制
     if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
@@ -496,7 +529,7 @@ function update() {
     
     // 只有在非移動或滑鼠模式下更新角度 (避免手機移動時角度亂跳)
     if (!isMobile) {
-        player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+        player.angle = Math.atan2(mousePos.y - player.y, mousePos.x - player.x);
     }
     if (player.shotTimer > 0) player.shotTimer--;
     if (player.muzzleFlash > 0) player.muzzleFlash--;
@@ -906,7 +939,15 @@ function updateUI() {
     document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
 }
 
-window.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; });
+window.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    // 儲存滑鼠在遊戲世界中的絕對位置
+    mousePos.x = (e.clientX - rect.left) * scaleX + camera.x;
+    mousePos.y = (e.clientY - rect.top) * scaleY + camera.y;
+});
 window.addEventListener('keydown', e => keys[e.code] = true);
 window.addEventListener('keyup', e => keys[e.code] = false);
 window.addEventListener('mousedown', e => { 
@@ -1015,17 +1056,20 @@ window.addEventListener('touchend', e => {
 // --- 右側點擊射擊邏輯 ---
 canvas.addEventListener('touchstart', e => {
     if (!gameStarted) return;
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
     
-    // 如果點擊是在畫布右半部或上方，觸發射擊
-    const tx = touch.clientX - rect.left;
-    const ty = touch.clientY - rect.top;
-    
-    // 更新玩家角度朝向觸控點
-    player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
-    
-    fireShotgun();
+    // 遍歷所有觸控點，尋找非搖桿區域的點
+    for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const rect = canvas.getBoundingClientRect();
+        const tx = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const ty = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+        // 如果觸控點在螢幕右側（非搖桿區）
+        if (touch.clientX > window.innerWidth / 3) {
+            player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
+            fireShotgun();
+        }
+    }
 }, { passive: false });
 </script>
 
