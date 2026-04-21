@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Hell-Gunner</title>
+    <style>
+/* 開始選單專用樣式 */
+#start-menu {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, #2a0000 0%, #000 80%);
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 100;
+    transition: opacity 0.8s ease;
+}
+
+.menu-title {
+    font-size: 72px; color: #ff0000;
+    text-shadow: 0 0 20px #ff0000;
+    margin-bottom: 10px; font-weight: bold;
+    letter-spacing: 10px;
+}
+
+.menu-subtitle {
+    font-size: 14px; color: #880000;
+    letter-spacing: 4px; margin-bottom: 50px;
+}
+
+.start-btn {
+    padding: 15px 50px;
+    background: transparent;
+    border: 2px solid #ff0000;
+    color: #ff0000;
+    font-size: 24px; cursor: pointer;
+    font-family: inherit;
+    transition: 0.3s;
+    box-shadow: 0 0 10px rgba(255,0,0,0.3);
+}
+
+.start-btn:hover {
+    background: #ff0000;
+    color: #000;
+    box-shadow: 0 0 30px #ff0000;
+}
+        body { 
+            margin: 0; background: #000; color: #ff0000; 
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; overflow: hidden;
+        }
+        #game-container { display: flex; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; }
+        canvas { background: #020000; display: block; cursor: crosshair; }
+        #sidebar { width: 300px; background: #0a0000; border-left: 4px solid #4a0000; padding: 20px; display: flex; flex-direction: column; }
+        .ui-box { width: 100%; margin-bottom: 20px; }
+        .label { font-size: 11px; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; }
+        .value { font-size: 22px; font-weight: bold; margin-top: 5px; color: #ff3333; }
+        #radar-container { width: 240px; height: 180px; border: 2px solid #4a0000; background: #030303; margin: 10px auto; position: relative; overflow: hidden; }
+        #radarCanvas { width: 240px; height: 180px; }
+        #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 10px; opacity: 0; transition: 0.5s; pointer-events: none; }
+        .hp-bar-bg { width: 100%; height: 12px; background: #200; border: 1px solid #700; margin-top: 10px; }
+        #hp-fill { height: 100%; background: linear-gradient(90deg, #800, #ff0000); width: 100%; transition: 0.1s; }
+        .reload-bar-bg { width: 100%; height: 6px; background: #111; margin-top: 8px; border: 1px solid #333; }
+        #reload-fill { height: 100%; background: #00ccff; width: 0%; box-shadow: 0 0 10px #00ccff; }
+        .task-list { font-size: 14px; color: #00ffaa; margin-top: 10px; font-weight: bold; }
+        .controls { font-size: 11px; color: #666; margin-top: auto; line-height: 1.6; }
+    </style>
+</head>
+<body>
+<div id="start-menu">
+    <div class="menu-title">HELL-GUNNER</div>
+    <div class="menu-subtitle">你能殺往第18層嗎？</div>
+    <button class="start-btn" onclick="startGame()">開始任務</button>
+</div>
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="sidebar">
+        <div class="ui-box">
+            <div class="label">生命特徵 (BIO-SIGNAL)</div>
+            <div id="hp-ui" class="value">100%</div>
+            <div class="hp-bar-bg"><div id="hp-fill"></div></div>
+        </div>
+        <div class="ui-box">
+            <div class="label">目標進度 (OBJECTIVE)</div>
+            <div id="lvl-ui" class="value">地獄層數: 1</div>
+            <div id="task-ui" class="task-list">儀式數目: 0 / 3</div>
+        </div>
+        <div class="ui-box">
+            <div class="label">散彈槍裝填 (READY)</div>
+            <div class="reload-bar-bg"><div id="reload-fill"></div></div>
+        </div>
+        <div class="ui-box">
+            <div class="label">掃描雷達 (SONAR)</div>
+            <div id="radar-container">
+                <div id="radar-ping-label">SCANNING...</div>
+                <canvas id="radarCanvas" width="240" height="180"></canvas>
+            </div>
+        </div>
+<div class="controls">
+    <div class="label" style="margin-bottom: 5px;">戰術簡報 (INTELLIGENCE)</div>
+    ● 進行血祭（收集 3 個五芒星）以開啟傳送門。<br>
+    ● 按 **WASD** 移動，**滑鼠左鍵** 散彈槍除魔。<br><br>
+    
+    <div class="label" style="margin-bottom: 5px;">威脅評估 (THREAT LOG)</div>
+    <span style="color: #ffff00;">● 迅捷者 (Yellow Eye):</span> 體型小、移速極快，群體出沒時極其危險。抗擊退力弱。<br>
+    <span style="color: #ff0000;">● 漫遊屍 (Red Eye):</span> 標準型惡魔，體力與速度均衡。最常見的威脅。<br>
+    <span style="color: #ff00ff;">● 獄卒 (Purple Eye):</span> 巨型單位。極高生命值，極高傷害且幾乎無視擊退。建議拉開距離。
+</div>
+    </div>
+</div>
+
+<script>
+
+// --- 1. 音效引擎 ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'shot') { // 強化版散彈槍音效
+        // 1. 火藥爆發聲 (尖銳的高頻)
+        const oscPop = audioCtx.createOscillator();
+        const gainPop = audioCtx.createGain();
+        oscPop.type = 'sawtooth';
+        oscPop.frequency.setValueAtTime(220, audioCtx.currentTime);
+        oscPop.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+        gainPop.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gainPop.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        oscPop.connect(gainPop); gainPop.connect(audioCtx.destination);
+
+        // 2. 重音低音 (爆發後的震動感)
+        const oscBoom = audioCtx.createOscillator();
+        const gainBoom = audioCtx.createGain();
+        oscBoom.type = 'triangle';
+        oscBoom.frequency.setValueAtTime(80, audioCtx.currentTime);
+        oscBoom.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.2);
+        gainBoom.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainBoom.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        oscBoom.connect(gainBoom); gainBoom.connect(audioCtx.destination);
+
+        // 3. 模擬金屬餘韻 (White Noise 的簡化版：高頻雜訊)
+        const oscMetal = audioCtx.createOscillator();
+        const gainMetal = audioCtx.createGain();
+        oscMetal.type = 'square'; // 方波產生較多諧波
+        oscMetal.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        gainMetal.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainMetal.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+        oscMetal.connect(gainMetal); gainMetal.connect(audioCtx.destination);
+
+        oscPop.start(); oscBoom.start(); oscMetal.start();
+        oscPop.stop(audioCtx.currentTime + 0.1);
+        oscBoom.stop(audioCtx.currentTime + 0.25);
+        oscMetal.stop(audioCtx.currentTime + 0.05);
+
+    } else if (type === 'hit') { // 模擬被咬的清脆咬合聲 (Crunch/Bite)
+        // 1. 牙齒咬合的高頻「喀喳」聲
+        const oscCrunch = audioCtx.createOscillator();
+        const gainCrunch = audioCtx.createGain();
+        oscCrunch.type = 'triangle'; // 三角波比較有肉質感
+        oscCrunch.frequency.setValueAtTime(400, audioCtx.currentTime);
+        oscCrunch.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+        gainCrunch.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainCrunch.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+        
+        oscCrunch.connect(gainCrunch);
+        gainCrunch.connect(audioCtx.destination);
+        
+        // 2. 低頻的受傷撞擊聲
+        const oscThump = audioCtx.createOscillator();
+        const gainThump = audioCtx.createGain();
+        oscThump.type = 'sine';
+        oscThump.frequency.setValueAtTime(80, audioCtx.currentTime);
+        gainThump.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainThump.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+        
+        oscThump.connect(gainThump);
+        gainThump.connect(audioCtx.destination);
+        
+        oscCrunch.start();
+        oscThump.start();
+        oscCrunch.stop(audioCtx.currentTime + 0.08);
+        oscThump.stop(audioCtx.currentTime + 0.15);
+
+    } else if (type === 'pickup') { // 撿起物件聲
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+}
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const radarCanvas = document.getElementById('radarCanvas');
+const rctx = radarCanvas.getContext('2d');
+
+canvas.width = 1000;
+canvas.height = 750;
+const WORLD = { width: 3200, height: 2400 };
+
+let startPos = { x: 400, y: 350 }; // 初始第一關的地點
+let level = 1;
+let player = { x: 0, y: 0, size: 18, speed: 4.8, hp: 100, angle: 0, shotTimer: 0, muzzleFlash: 0, hitFlash: 0, shake: 0 };
+const SHOT_COOLDOWN = 85; 
+const BASE_SHOT_RANGE = 260; // 稍微增加一點射程感
+const PELLET_COUNT = 6;
+
+let mousePos = { x: 0, y: 0 };
+let camera = { x: 0, y: 0 };
+let enemies = [];
+let walls = [];
+let particles = []; 
+let decals = []; // 用於存放永久裝飾物（如血跡）
+let shells = [];
+let tracers = [];
+let collectibles = [];
+let exitPoint = null, exitTempPoint = null;
+let keys = {};
+
+let radarTimer = 0, radarCircleRadius = 0;
+let lastRadarSnapshot = { enemies: [], collectibles: [], exit: null };
+
+class Particle {
+    constructor(x, y, vx, vy, life, size, color, drag = 0.95) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.life = life; this.maxLife = life; this.size = size; this.color = color;
+        this.drag = drag;
+    }
+    update() { 
+        this.vx *= this.drag; this.vy *= this.drag; 
+        this.x += this.vx; this.y += this.vy; 
+        this.life--; 
+    }
+    draw(ctx) { 
+        ctx.globalAlpha = this.life / this.maxLife; 
+        ctx.fillStyle = this.color; 
+        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size); 
+        ctx.globalAlpha = 1; 
+    }
+}
+
+function isInsideWall(x, y, padding = 18) {
+    for (let w of walls) {
+        if (x + padding > w.x && x - padding < w.x + w.w && y + padding > w.y && y - padding < w.y + w.h) return true;
+    }
+    return (x < padding || x > WORLD.width - padding || y < padding || y > WORLD.height - padding);
+}
+
+function generateStaticMap() {
+    walls = [];
+    const t = 40; const door = 120;
+    const roomDefs = [
+        {x: 100, y: 100, w: 600, h: 500}, {x: 800, y: 100, w: 400, h: 400}, {x: 1300, y: 100, w: 800, h: 500}, 
+        {x: 2200, y: 100, w: 500, h: 800}, {x: 100, y: 700, w: 500, h: 300}, {x: 700, y: 600, w: 500, h: 700}, 
+        {x: 1300, y: 700, w: 800, h: 600}, {x: 2200, y: 1000, w: 800, h: 500}, {x: 100, y: 1100, w: 500, h: 1000},
+        {x: 700, y: 1400, w: 1000, h: 700}, {x: 1800, y: 1400, w: 300, h: 700}, {x: 2200, y: 1600, w: 800, h: 500}, 
+        {x: 2800, y: 100, w: 300, h: 800}, {x: 1800, y: 2200, w: 1200, h: 150}
+    ];
+    roomDefs.forEach(r => {
+        walls.push({x: r.x, y: r.y, w: r.w/2 - door/2, h: t}, {x: r.x + r.w/2 + door/2, y: r.y, w: r.w/2 - door/2, h: t});
+        walls.push({x: r.x, y: r.y + r.h, w: r.w/2 - door/2, h: t}, {x: r.x + r.w/2 + door/2, y: r.y + r.h, w: r.w/2 - door/2, h: t});
+        walls.push({x: r.x, y: r.y, w: t, h: r.h/2 - door/2}, {x: r.x, y: r.y + r.h/2 + door/2, w: t, h: r.h/2 - door/2});
+        walls.push({x: r.x + r.w, y: r.y, w: t, h: r.h/2 - door/2}, {x: r.x + r.w, y: r.y + r.h/2 + door/2, w: t, h: r.h/2 - door/2});
+    });
+    walls.push({x:0, y:0, w:WORLD.width, h:t}, {x:0, y:WORLD.height-t, w:WORLD.width, h:t}, {x:0, y:0, w:t, h:WORLD.height}, {x:WORLD.width-t, y:0, w:t, h:WORLD.height});
+}
+
+function getRandomEmptyPos(padding = 50) {
+    let x, y, attempts = 0;
+    do { x = 200 + Math.random() * (WORLD.width - 400); y = 200 + Math.random() * (WORLD.height - 400); attempts++; } 
+    while (isInsideWall(x, y, padding) && attempts < 1000);
+    return { x, y };
+}
+
+// --- 強化後的散彈槍特效邏輯 ---
+function fireShotgun() {
+    if (player.shotTimer <= 0) {
+        player.shotTimer = SHOT_COOLDOWN;
+        player.shake = 18; 
+        playSound('shot');
+        player.muzzleFlash = 10;
+
+        // --- 新增：玩家後座力 ---
+        let recoilDist = 50;
+        let rx = -Math.cos(player.angle) * recoilDist;
+        let ry = -Math.sin(player.angle) * recoilDist;
+        if (!isInsideWall(player.x + rx, player.y, player.size)) player.x += rx;
+        if (!isInsideWall(player.x, player.y + ry, player.size)) player.y += ry;
+        // -----------------------
+
+
+        // 拋殼特效
+        let shellAngle = player.angle + Math.PI/2 + (Math.random()-0.5);
+        shells.push({ x: player.x, y: player.y, vx: Math.cos(shellAngle)*5, vy: Math.sin(shellAngle)*5, life: 60, angle: Math.random()*Math.PI*2, rot: (Math.random()-0.5)*0.6 });
+
+        // 槍口煙霧 (Smoke)
+        for(let i=0; i<5; i++) {
+            let sAng = player.angle + (Math.random()-0.5)*1.2;
+            let spd = 2 + Math.random()*3;
+            particles.push(new Particle(player.x + Math.cos(player.angle)*20, player.y + Math.sin(player.angle)*20, Math.cos(sAng)*spd, Math.sin(sAng)*spd, 30+Math.random()*20, 4+Math.random()*6, '#666', 0.92));
+        }
+
+        // 槍口火花 (Sparks)
+        for(let i=0; i<8; i++) {
+            let sAng = player.angle + (Math.random()-0.5)*0.8;
+            let spd = 6 + Math.random()*8;
+            particles.push(new Particle(player.x + Math.cos(player.angle)*25, player.y + Math.sin(player.angle)*25, Math.cos(sAng)*spd, Math.sin(sAng)*spd, 10, 2, '#ffaa00', 0.9));
+        }
+
+        for (let i = 0; i < PELLET_COUNT; i++) {
+            let pAngle = player.angle + (Math.random() - 0.5) * 0.65; 
+            let range = BASE_SHOT_RANGE * (0.8 + Math.random() * 0.4);
+            let hitDist = range;
+            let hitWall = false;
+
+            for (let d = 0; d < range; d += 8) {
+                let px = player.x + Math.cos(pAngle) * d, py = player.y + Math.sin(pAngle) * d;
+                if (isInsideWall(px, py, 4)) { 
+                    hitDist = d; hitWall = true; break; 
+                }
+            }
+            
+            // 彈道蹤跡 (Tracers) - 寬度與漸變優化
+            tracers.push({ x: player.x, y: player.y, angle: pAngle, len: hitDist, life: 12 });
+
+            // 擊中牆壁的火花
+            if(hitWall) {
+                let hx = player.x + Math.cos(pAngle)*hitDist;
+                let hy = player.y + Math.sin(pAngle)*hitDist;
+                for(let j=0; j<3; j++) {
+                    particles.push(new Particle(hx, hy, (Math.random()-0.5)*10, (Math.random()-0.5)*10, 15, 2, '#ffffaa', 0.85));
+                }
+            }
+
+            enemies.forEach(en => {
+                let dx = en.x - player.x, dy = en.y - player.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < hitDist) {
+                    let a = Math.atan2(dy, dx);
+                    if (Math.abs(((a - pAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI)) < 0.2) {
+
+// --- 修改後的受傷邏輯 ---
+en.hp -= (dist < 100 ? 22 : 10);
+// 產生少量濺射血跡裝飾
+if (Math.random() > 0.4) {
+    decals.push({
+        x: en.x + (Math.random()-0.5) * 30,
+        y: en.y + (Math.random()-0.5) * 30,
+        size: 1 + Math.random() * 3,
+        color: '#600', // 暗紅色
+        alpha: 0.2 + Math.random() * 0.3
+    });
+}
+
+// --- 修改後的死亡邏輯 ---
+if (en.hp <= 0) { 
+    // 敵人死亡時，在地板留下大片血泊
+    for(let i=0; i<12; i++) {
+        decals.push({
+            x: en.x + (Math.random()-0.5) * 45,
+            y: en.y + (Math.random()-0.5) * 45,
+            size: 4 + Math.random() * 6,
+            color: '#400', // 更深的乾涸血色
+            alpha: 0.2 + Math.random() * 0.3
+        });
+    }
+    enemies.splice(idx, 1); 
+    
+    // 防止記憶體溢位，超過 1000 個裝飾就刪除舊的
+    if (decals.length > 1000) decals.shift();
+    return; 
+}
+                        en.kX = Math.cos(a) * 16 * en.kbResist; en.kY = Math.sin(a) * 16 * en.kbResist;
+                        // 擊中血花優化
+                        for(let j=0; j<6; j++) particles.push(new Particle(en.x, en.y, Math.cos(a+(Math.random()-0.5)*2.5)*8, Math.sin(a+(Math.random()-0.5)*2.5)*8, 25, 3, '#c00'));
+                    }
+                }
+            });
+        }
+    }
+}
+
+function initLevel() {
+    decals = []; // [新增] 清空上一層的血跡
+    if (level > 1) player.hp = Math.min(100, player.hp + 20);
+    generateStaticMap();
+    player.x = startPos.x; 
+    player.y = startPos.y;
+    collectibles = [];
+    for(let i=0; i<3; i++) { 
+        let pos = getRandomEmptyPos(40); 
+        collectibles.push({x: pos.x, y: pos.y, collected: false, visibleTimer: 0}); 
+    }
+    let ePos = getRandomEmptyPos(100);
+    exitTempPoint = { x: ePos.x, y: ePos.y, visibleTimer: 0 };
+    exitPoint = null; 
+    enemies = [];
+    const count = 20 + level * 5;
+    for(let i=0; i < count; i++) {
+        let pos = getRandomEmptyPos(40);
+        if (Math.hypot(pos.x - player.x, pos.y - player.y) < 600) continue;
+        let type = Math.random();
+        let en = (type < 0.15 && level > 1) ? 
+            { x: pos.x, y: pos.y, hp: 170, maxHp: 170, speed: 0.8, size: 28, color: '#300', eye: '#ff00ff', kbResist: 0.1, biteDmg: 40 } :
+            (type < 0.45 ? { x: pos.x, y: pos.y, hp: 25, maxHp: 25, speed: 2.2, size: 14, color: '#220', eye: '#ffff00', kbResist: 1.4, biteDmg: 10 } :
+            { x: pos.x, y: pos.y, hp: 55, maxHp: 55, speed: 1.5, size: 22, color: '#111', eye: '#ff0000', kbResist: 0.7, biteDmg: 18 });
+        en.kX = 0; en.kY = 0; en.biteTimer = 0; en.angle = 0; en.targetX = player.x; en.targetY = player.y; en.pathUpdate = Math.random()*60;
+        enemies.push(en);
+    }
+    lastRadarSnapshot = { 
+        enemies: enemies.map(e => ({x: e.x, y: e.y, color: e.eye, visibleTimer: 0})), 
+        collectibles: collectibles.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, visibleTimer: 0})), 
+        exit: exitPoint ? {x: exitPoint.x, y: exitPoint.y, visibleTimer: 0} : null 
+    };
+    radarTimer = 0; // 重置計時器
+    radarCircleRadius = 0; // 讓掃描波從圓心開始擴張
+    // ----------------------------------------------
+
+    updateUI();
+}
+
+function update() {
+    if (player.hp <= 0) { alert("你已經被深淵吞噬，請重新挑戰！"); location.reload(); return; }
+    let dx = 0, dy = 0;
+    if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
+    if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
+    if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
+    if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
+    player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    if (player.shotTimer > 0) player.shotTimer--;
+    if (player.muzzleFlash > 0) player.muzzleFlash--;
+
+    document.getElementById('reload-fill').style.width = ((SHOT_COOLDOWN - player.shotTimer) / SHOT_COOLDOWN * 100) + "%";
+    camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
+    camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+
+    radarTimer++;
+    if (radarTimer >= 180) { 
+        radarTimer = 0; radarCircleRadius = 0;
+        lastRadarSnapshot = { 
+            enemies: enemies.map(e => ({x: e.x, y: e.y, color: e.eye, visibleTimer: 0})), 
+            collectibles: collectibles.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, visibleTimer: 0})), 
+            exit: exitPoint ? {x: exitPoint.x, y: exitPoint.y, visibleTimer: 0} : null 
+        };
+        document.getElementById('radar-ping-label').style.opacity = 1; 
+        setTimeout(() => document.getElementById('radar-ping-label').style.opacity = 0, 500);
+    }
+    if (radarCircleRadius < 3500) {
+        radarCircleRadius += 35;
+        lastRadarSnapshot.enemies.forEach(en => {
+            let d = Math.hypot(player.x - en.x, player.y - en.y);
+            if (radarCircleRadius >= d && en.visibleTimer <= 0) en.visibleTimer = 60;
+        });
+        lastRadarSnapshot.collectibles.forEach(c => {
+            let d = Math.hypot(player.x - c.x, player.y - c.y);
+            if (radarCircleRadius >= d && c.visibleTimer <= 0) c.visibleTimer = 60;
+        });
+        if (lastRadarSnapshot.exit) {
+            let d = Math.hypot(player.x - lastRadarSnapshot.exit.x, player.y - lastRadarSnapshot.exit.y);
+            if (radarCircleRadius >= d && lastRadarSnapshot.exit.visibleTimer <= 0) lastRadarSnapshot.exit.visibleTimer = 60;
+        }
+    }
+    lastRadarSnapshot.enemies.forEach(en => { if(en.visibleTimer > 0) en.visibleTimer--; });
+    lastRadarSnapshot.collectibles.forEach(c => { if(c.visibleTimer > 0) c.visibleTimer--; });
+    if(lastRadarSnapshot.exit && lastRadarSnapshot.exit.visibleTimer > 0) lastRadarSnapshot.exit.visibleTimer--;
+
+    particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
+    shells.forEach((s, i) => { s.vx *= 0.9; s.vy *= 0.9; s.x += s.vx; s.y += s.vy; s.angle += s.rot; s.life--; if(s.life <= 0) shells.splice(i, 1); });
+
+collectibles.forEach(c => {
+    if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) { 
+        c.collected = true; 
+        
+        // --- [新增：隨機回血邏輯] ---
+        // 設定回血範圍，例如 10 到 25 點 HP
+        let healAmount = Math.floor(Math.random() * 16) + 10; 
+        player.hp = Math.min(100, player.hp + healAmount);
+        
+        // 視覺回饋：受傷紅光是紅色，回血可以用綠色閃爍
+        player.hitFlash = 10; // 借用閃爍機制，但我們可以改顏色或直接加一個特效
+        
+        // 浮動文字特效 (選配)：讓玩家知道回了多少血
+        for(let i=0; i<5; i++) {
+            particles.push(new Particle(
+                player.x, player.y, 
+                (Math.random()-0.5)*4, (Math.random()-0.5)*4, 
+                30, 4, '#00ffaa' // 綠色粒子
+            ));
+        }
+        // --------------------------
+
+        updateUI(); 
+        playSound('pickup');
+        if(collectibles.every(it => it.collected)) {
+            exitPoint = { x: exitTempPoint.x, y: exitTempPoint.y };
+        }
+    }
+    });
+    if (exitPoint && Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 50) { 
+    // --- 修改這裡：在跳下一關前，先把目前的出口座標存成下一關的起點 ---
+    startPos = { x: exitPoint.x, y: exitPoint.y };
+    // ------------------------------------------------------------
+    
+    level++; 
+    initLevel(); 
+}
+
+    enemies.forEach((en, idx) => {
+        if (en.hp <= 0) { enemies.splice(idx, 1); return; }
+        en.pathUpdate--;
+        if (en.pathUpdate <= 0) {
+            en.pathUpdate = 30;
+            let dist = Math.hypot(player.x - en.x, player.y - en.y);
+            let blocked = false;
+            for(let d=0; d<dist; d+=40) { if(isInsideWall(en.x + Math.cos(en.angle)*d, en.y + Math.sin(en.angle)*d, 20)) { blocked = true; break; } }
+            if(!blocked) { en.targetX = player.x; en.targetY = player.y; }
+            else { for(let offset of [1.3, -1.3, 2.2, -2.2]) { let tx = en.x + Math.cos(en.angle + offset) * 180; let ty = en.y + Math.sin(en.angle + offset) * 180; if(!isInsideWall(tx, ty, 25)) { en.targetX = tx; en.targetY = ty; break; } } }
+        }
+        let moveAng = Math.atan2(en.targetY - en.y, en.targetX - en.x);
+        en.angle = Math.atan2(player.y - en.y, player.x - en.x);
+        if (Math.hypot(player.x - en.x, player.y - en.y) > en.size) {
+            let vx = Math.cos(moveAng) * en.speed, vy = Math.sin(moveAng) * en.speed;
+            if (!isInsideWall(en.x + vx, en.y, en.size)) en.x += vx;
+            if (!isInsideWall(en.x, en.y + vy, en.size)) en.y += vy;
+        } else if (en.biteTimer <= 0) { player.hp -= en.biteDmg; playSound('hit'); player.hitFlash = 15; player.shake = 30; en.biteTimer = 60;     for(let i = 0; i < 5; i++) {
+        decals.push({
+            // 讓血跡出現在玩家周圍
+            x: player.x + (Math.random() - 0.5) * 30,
+            y: player.y + (Math.random() - 0.5) * 30,
+            
+            // 玩家的血可以稍微大一點點，增加受傷感
+            size: 2 + Math.random() * 5,
+            
+            // 鮮紅色
+            color: '#800', 
+            alpha: 0.6
+        });
+    }
+    // ------------------------------------
+
+    updateUI();  }
+        if (Math.abs(en.kX) > 0.1) { if (!isInsideWall(en.x + en.kX, en.y, en.size)) en.x += en.kX; en.kX *= 0.8; }
+        if (Math.abs(en.kY) > 0.1) { if (!isInsideWall(en.x, en.y + en.kY, en.size)) en.y += en.kY; en.kY *= 0.8; }
+        if (en.biteTimer > 0) en.biteTimer--;
+    });
+}
+
+function draw() {
+    ctx.fillStyle = '#020000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save(); 
+    if (player.shake > 0.1) { ctx.translate((Math.random()-0.5)*player.shake, (Math.random()-0.5)*player.shake); player.shake *= 0.85; }
+    ctx.translate(-camera.x, -camera.y);
+
+    // --- [新增] 繪製牆壁 ---
+    walls.forEach(w => { 
+        ctx.fillStyle = '#1a0505'; ctx.fillRect(w.x, w.y, w.w, w.h); 
+        ctx.strokeStyle = '#4a1111'; ctx.lineWidth = 2; ctx.strokeRect(w.x, w.y, w.w, w.h); 
+    });
+
+    // --- [新增] 繪製地面裝飾 (血跡層) ---
+    decals.forEach(d => {
+        ctx.save();
+        ctx.globalAlpha = d.alpha;
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        // 繪製稍微不規則的血跡
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+// --- 新增：繪製動畫五芒星收集物 ---
+collectibles.forEach(c => {
+    if (!c.collected) {
+        ctx.save();
+        ctx.translate(c.x, c.y); // 將畫布中心移到收集物位置
+        
+        // --- 優化點 A：穩定的旋轉動畫 ---
+        // 使用 Date.now() 的毫秒數，除以一個較大的數值 (例如 2000)，
+        // 產生一個緩慢、持續累加的角度。
+        // 逆時針旋轉 (-) 通常看起來更诡异。
+        ctx.rotate(-Date.now() / 2000); 
+
+        // --- 優化點 B：能量閃爍效果 ---
+        // 利用正弦波 (Math.sin) 產生透明度的週期性變化
+        // Date.now() / 300 控制閃爍速度，數值越小閃越快
+        let blink = Math.sin(Date.now() / 300) * 0.3 + 0.7; // 透明度介於 0.4 到 1.0 之間
+        
+        // 設置外框顏色 (霓虹紅) 與動態透明度
+        ctx.strokeStyle = `rgba(255, 0, 0, ${blink})`;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round'; // 角落圓滑一點
+        
+        // 設置內層填充顏色 (半透明深紅)
+        ctx.fillStyle = `rgba(150, 0, 0, ${blink * 0.5})`; // 填充透明度隨外框連動
+
+        // 繪製五芒星路徑的函數 (半徑與之前相同)
+        ctx.beginPath();
+        const outerRadius = 12;
+        const innerRadius = 5;
+        
+        for (let i = 0; i < 10; i++) {
+            let angle = (i * Math.PI) / 5 - Math.PI / 2; 
+            let r = (i % 2 === 0) ? outerRadius : innerRadius;
+            let currX = Math.cos(angle) * r;
+            let currY = Math.sin(angle) * r;
+            
+            if (i === 0) ctx.moveTo(currX, currY);
+            else ctx.lineTo(currX, currY);
+        }
+        ctx.closePath();
+        
+        // 繪製填充與外框
+        ctx.fill();
+        ctx.stroke();
+
+        // 額外增加一個外圈圓環，強化魔陣感
+        ctx.strokeStyle = `rgba(255, 0, 0, ${blink * 0.3})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore(); // 恢復畫布狀態
+    }
+});
+    // --- 進階手電筒：光線投射 (Raycasting) 版本 ---
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+    ctx.globalCompositeOperation = 'lighter';
+
+    let beamRange = 300;   // 射程
+    let beamAngle = 0.3;   // 角度範圍
+    let rayCount = 40;     // 光線數量 (越多越精細，但耗效能，40-60 效果最佳)
+
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+
+    // 從 -beamAngle 掃描到 +beamAngle
+    for (let i = 0; i <= rayCount; i++) {
+        let currentAngle = -beamAngle + (i / rayCount) * (beamAngle * 2);
+        
+        // 這條光線在世界座標中的實際角度
+        let worldAngle = player.angle + currentAngle;
+        let rayX = player.x;
+        let rayY = player.y;
+        let finalDist = beamRange;
+
+        // --- 核心：光線步進法 (Raymarching) 偵測牆壁 ---
+        // 每隔一段距離檢查一次是否撞牆
+        let step = 15; // 步進距離，越小越精準
+        for (let d = step; d <= beamRange; d += step) {
+            let checkX = player.x + Math.cos(worldAngle) * d;
+            let checkY = player.y + Math.sin(worldAngle) * d;
+            
+            if (isInsideWall(checkX, checkY, 2)) { // 偵測是否撞牆
+                finalDist = d;
+                break;
+            }
+        }
+
+        // 計算在 local 座標系中的點
+        let lx = Math.cos(currentAngle) * finalDist;
+        let ly = Math.sin(currentAngle) * finalDist;
+        ctx.lineTo(lx, ly);
+    }
+
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+
+    // 建立漸變填色
+    let beamGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, beamRange);
+    beamGrad.addColorStop(0, 'rgba(255, 255, 220, 0.4)');
+    beamGrad.addColorStop(1, 'rgba(255, 255, 220, 0)');
+    
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(255, 255, 200, 0.3)';
+    ctx.fillStyle = beamGrad;
+    ctx.fill();
+
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+// ---------------------------------
+    if(exitPoint) {
+        let pulse = Math.sin(Date.now() / 200) * 12 + 45;
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.15)'; ctx.beginPath(); ctx.arc(exitPoint.x, exitPoint.y, pulse, 0, 6.28); ctx.fill();
+        ctx.strokeStyle = '#0ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(exitPoint.x, exitPoint.y, 40, 0, 6.28); ctx.stroke();
+    }
+
+    particles.forEach(p => p.draw(ctx));
+    shells.forEach(s => { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle); 
+ctx.fillStyle = '#daa520'; ctx.fillRect(-1, -2, 2, 4); ctx.restore(); });
+
+    tracers.forEach((t, i) => {
+        ctx.strokeStyle = `rgba(255, 255, 220, ${t.life/12})`; ctx.lineWidth = t.life/3;
+        ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x+Math.cos(t.angle)*t.len, t.y+Math.sin(t.angle)*t.len); ctx.stroke();
+        t.life--; if(t.life<=0) tracers.splice(i,1);
+    });
+
+    // --- 敵人繪製邏輯：手電筒照到才顯示 ---
+    // 修改 enemies.forEach 內的移動邏輯
+enemies.forEach(en => {
+    // 增加一個「抽搐計時器」
+    en.twitchTimer = (en.twitchTimer || 0) - 1;
+    
+    let currentSpeed = en.speed;
+    
+    if (en.twitchTimer <= 0) {
+        // 隨機爆發速度或突然停頓
+        en.speedMult = Math.random() > 0.8 ? 2.5 : 0.4; 
+        en.twitchTimer = 10 + Math.random() * 20;
+    }
+    
+    let moveAng = Math.atan2(en.targetY - en.y, en.targetX - en.x);
+    let vx = Math.cos(moveAng) * (en.speed * (en.speedMult || 1));
+    let vy = Math.sin(moveAng) * (en.speed * (en.speedMult || 1));
+    
+// --- 僅修改抖動邏輯 ---
+let sx = (Math.random() - 0.5) * 2; // 計算 X 軸抖動量
+let sy = (Math.random() - 0.5) * 2; // 計算 Y 軸抖動量
+
+// 移動前先檢查牆壁
+if (!isInsideWall(en.x + vx + sx, en.y, en.size)) en.x += vx + sx;
+if (!isInsideWall(en.x, en.y + vy + sy, en.size)) en.y += vy + sy;
+// --------------------
+        // 1. 計算距離與角度
+        let dx = en.x - player.x;
+        let dy = en.y - player.y;
+        let dist = Math.hypot(dx, dy);
+        let angleToEnemy = Math.atan2(dy, dx);
+
+        // 2. 計算角度差 (確保在 -PI 到 PI 之間)
+        let angleDiff = Math.abs(((angleToEnemy - player.angle + Math.PI * 3) % (Math.PI * 2) - Math.PI));
+
+        // 3. 判斷可見性
+        let isVisible = false;
+        let flashlightRange = 300; // 射程
+        let flashlightAngle = 0.2; // 寬度
+        let proximityRange = 80;   // 貼身強制可見範圍
+
+if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityRange) {
+    // 預設為可見，但如果被牆擋住就變不可見
+    isVisible = true; 
+
+    // 從玩家到敵人連一條線，檢查中間是否有牆
+    // 每隔 15 像素檢查一次，確保不會漏掉薄牆
+    for (let d = 10; d < dist; d += 15) {
+        let cx = player.x + Math.cos(angleToEnemy) * d;
+        let cy = player.y + Math.sin(angleToEnemy) * d;
+        if (isInsideWall(cx, cy, 2)) {
+            isVisible = false; // 發現牆壁，隱藏怪物
+            break;
+        }
+    }
+}
+
+        // 4. 如果可見，才執行繪製
+        if (isVisible) {
+            ctx.save();
+            
+            // 讓邊緣的怪物稍微半透明，視覺更自然
+            let alpha = (dist < proximityRange) ? 1 : (1 - dist / flashlightRange) * (1 - angleDiff / flashlightAngle) * 2;
+            ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+
+            // [這裡放原本繪製怪物的代碼]
+            ctx.fillStyle = en.color; 
+            ctx.beginPath(); ctx.arc(en.x, en.y, en.size, 0, 6.28); ctx.fill();
+            
+            // 繪製眼睛
+            ctx.save(); 
+            ctx.translate(en.x, en.y); ctx.rotate(en.angle);
+            ctx.fillStyle = en.eye; 
+            ctx.beginPath(); ctx.arc(en.size*0.6, -en.size*0.3, 3, 0, 6.28); 
+            ctx.arc(en.size*0.6, en.size*0.3, 3, 0, 6.28); ctx.fill();
+            ctx.restore();
+
+            // 繪製血條
+            let hpW = en.size * 2; 
+            ctx.fillStyle = '#200'; ctx.fillRect(en.x - hpW/2, en.y - en.size - 12, hpW, 4);
+            let hpPerc = en.hp / en.maxHp; 
+            ctx.fillStyle = hpPerc > 0.5 ? '#0f0' : (hpPerc > 0.25 ? '#ff0' : '#f00'); 
+            ctx.fillRect(en.x - hpW/2, en.y - en.size - 12, hpW * hpPerc, 4);
+            
+            ctx.restore();
+        }
+    });
+
+    ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
+    if (player.muzzleFlash > 0) {
+    ctx.save();
+    // 計算透明度：10/10 = 1.0 (最亮), 5/10 = 0.5, 0/10 = 0
+    ctx.globalAlpha = player.muzzleFlash / 10; 
+    
+    // 核心火光
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); 
+    // 讓半徑也隨時間稍微縮小一點 (從 25 縮到 15)
+    let dynamicRadius = 15 + player.muzzleFlash; 
+    ctx.arc(25, 0, dynamicRadius, 0, 6.28); 
+    ctx.fill();
+    
+    // 額外增加一層橘色暈光讓漸變更自然
+    ctx.fillStyle = '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(25, 0, dynamicRadius * 1.5, 0, 6.28);
+    ctx.fill();
+    
+    ctx.restore();
+}
+    ctx.fillStyle = '#eee'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, 6.28); ctx.fill();
+    ctx.fillStyle = '#333'; ctx.fillRect(10, -4, 20, 8); 
+    ctx.restore();
+    ctx.restore(); 
+
+    if (player.hitFlash > 0) { ctx.fillStyle = `rgba(255, 0, 0, ${player.hitFlash--/30})`; ctx.fillRect(0,0,canvas.width,canvas.height); }
+    let extraLight = player.muzzleFlash * 40;
+    let light = ctx.createRadialGradient(player.x-camera.x, player.y-camera.y, 10 + extraLight, player.x-camera.x, player.y-camera.y, 550 + extraLight);
+    light.addColorStop(0, 'rgba(0,0,0,0)'); light.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = light; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawRadar();
+}
+
+function drawRadar() {
+    rctx.fillStyle = 'rgba(0, 8, 0, 0.7)'; rctx.fillRect(0, 0, 240, 180);
+    const sx = 240 / WORLD.width, sy = 180 / WORLD.height;
+    const px = player.x * sx, py = player.y * sy;
+    if (radarCircleRadius < 3500) {
+        rctx.strokeStyle = `rgba(0, 255, 100, ${Math.max(0, 1 - radarCircleRadius/3500)})`;
+        rctx.lineWidth = 1.5; rctx.beginPath(); rctx.arc(px, py, radarCircleRadius * sx, 0, 6.28); rctx.stroke();
+    }
+    rctx.globalAlpha = 0.3; rctx.fillStyle = '#2c2';
+    walls.forEach(w => { rctx.fillRect(w.x*sx, w.y*sy, w.w*sx, w.h*sy); });
+    rctx.globalAlpha = 1;
+// --- 新增：繪製動畫五芒星收集物 ---
+lastRadarSnapshot.collectibles.forEach(c => {
+    if (c.visibleTimer > 0) {
+        rctx.save();
+        
+        // 將畫布原點移到雷達上的收集物位置
+        const cx = c.x * sx;
+        const cy = c.y * sy;
+        rctx.translate(cx, cy);
+
+        // --- 動態 A：旋轉動畫 ---
+        // 使用 Date.now() 加上一個較小的除數，產生緩慢的逆時針旋轉
+        rctx.rotate(-Date.now() / 2000); 
+
+        // --- 動態 B：閃爍動畫 ---
+        // 利用正弦波 (Math.sin) 產生透明度的週期性變化，模擬不穩定的能量
+        let blink = Math.sin(Date.now() / 300) * 0.4 + 0.6; // 透明度介於 0.2 到 1.0 之間
+        
+        // 設定顏色 (霓虹紅) 與透明度
+        rctx.strokeStyle = `rgba(255, 0, 0, ${blink})`;
+        rctx.lineWidth = 1;
+        rctx.lineJoin = 'round'; // 角落圓滑一點
+
+        // 繪製五芒星路徑 (外半徑 4, 內半徑 1.5)
+        rctx.beginPath();
+        const outerR = 4;
+        const innerR = 1.5;
+        for (let i = 0; i < 10; i++) {
+            let angle = (i * Math.PI) / 5 - Math.PI / 2;
+            let r = (i % 2 === 0) ? outerR : innerR;
+            let currX = Math.cos(angle) * r;
+            let currY = Math.sin(angle) * r;
+            if (i === 0) rctx.moveTo(currX, currY);
+            else rctx.lineTo(currX, currY);
+        }
+        rctx.closePath();
+        
+        // 繪製外框 (雷達不填充，保持透明感)
+        rctx.stroke();
+        
+        rctx.restore(); // 恢復畫布狀態
+    }
+});
+// ---------------------------------
+    if(lastRadarSnapshot.exit && lastRadarSnapshot.exit.visibleTimer > 0) {
+        rctx.fillStyle = (Date.now() % 400 > 200) ? '#fff' : '#0ff';
+        rctx.beginPath(); rctx.arc(lastRadarSnapshot.exit.x*sx, lastRadarSnapshot.exit.y*sy, 4, 0, 6.28); rctx.fill();
+    }
+    lastRadarSnapshot.enemies.forEach(en => { if(en.visibleTimer > 0) { rctx.globalAlpha = en.visibleTimer / 60; rctx.fillStyle = en.color; rctx.fillRect(en.x*sx-1, en.y*sy-1, 3, 3); rctx.globalAlpha = 1; } });
+    rctx.fillStyle = '#fff'; rctx.fillRect(px-2, py-2, 4, 4);
+}
+
+function updateUI() {
+    document.getElementById('hp-fill').style.width = player.hp + "%";
+    document.getElementById('hp-ui').innerText = Math.max(0, Math.ceil(player.hp)) + "%";
+    document.getElementById('lvl-ui').innerText = `地獄層數: ${level}`;
+    let collCount = collectibles.filter(c=>c.collected).length;
+    document.getElementById('task-ui').innerText = `儀式數目: ${collCount} / 3`;
+    document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
+}
+
+window.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; });
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+window.addEventListener('mousedown', e => { 
+    if (gameStarted && e.button === 0) { 
+        fireShotgun(); 
+    } 
+});
+
+initLevel();
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+// --- 修改後的遊戲啟動邏輯 ---
+
+let gameStarted = false;
+
+function startGame() {
+    if (gameStarted) return;
+    
+    // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    
+    // 2. 播放一個初始音效增加回饋感
+    playSound('pickup');
+    
+    // 3. 隱藏選單
+    const menu = document.getElementById('start-menu');
+    menu.style.opacity = '0';
+    setTimeout(() => {
+        menu.style.display = 'none';
+    }, 800);
+    
+    // 4. 正式啟動遊戲循環
+    gameStarted = true;
+    loop(); 
+}
+// --- 地獄視覺強化補丁 ---
+(function injectHorrorEffects() {
+    const originalUpdate = window.update;
+    const originalDraw = window.draw;
+
+    window.update = function() {
+        originalUpdate();
+
+        // 1. 受傷怪物血跡拖尾 (保留並優化)
+        enemies.forEach(en => {
+            if (en.hp < en.maxHp && en.hp > 0 && Math.random() > 0.85) {
+                decals.push({
+                    x: en.x + (Math.random() - 0.5) * 10,
+                    y: en.y + (Math.random() - 0.5) * 10,
+                    size: 1.5 + Math.random() * 2,
+                    color: '#500',
+                    alpha: 0.4
+                });
+            }
+        });
+
+        // 2. 玩家受傷時的視線模糊 (當 HP 低於 40)
+        if (player.hp < 40 && Math.random() > 0.95) {
+            player.shake += 5; // 產生隨機的生理性顫抖
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製
+        originalDraw();
+
+        // 3. 手電筒光暈不穩定感 (微弱閃爍)
+        if (gameStarted && Math.random() > 0.99) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 4. 生存壓力：螢幕邊緣血暈 (Vignette)
+        // 隨著 HP 降低，螢幕四周的紅邊會越來越明顯
+        if (player.hp < 100) {
+            let stress = (100 - player.hp) / 100;
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            grad.addColorStop(1, `rgba(136, 0, 0, ${stress * 0.5})`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 5. 怪物死亡後的「餘溫」 (在雷達上留下短暫殘影)
+        // 這會讓玩家分不清怪物是否真的死透了
+        if (Math.random() > 0.98 && enemies.length > 0) {
+             let ghost = enemies[Math.floor(Math.random() * enemies.length)];
+             particles.push(new Particle(ghost.x, ghost.y, 0, 0, 20, 2, '#400', 1));
+        }
+    };
+})();
+// --- 地獄細節強化補丁 (Splatter & Footprints) ---
+(function injectAdvancedHorror() {
+    const originalUpdate = window.update;
+    let bloodOnBoots = 0; // 玩家鞋子沾血程度
+
+    window.update = function() {
+        // 在執行原始邏輯前，紀錄敵人數量來偵測死亡
+        const enemyCountBefore = enemies.length;
+        const enemyPositions = enemies.map(e => ({x: e.x, y: e.y, hp: e.hp}));
+
+        originalUpdate();
+
+        // 1. 死亡大噴濺：偵測誰剛死掉
+        enemyPositions.forEach((oldEn, i) => {
+            // 檢查該位置的敵人是否消失或 HP 歸零
+            const stillAlive = enemies.some(e => Math.hypot(e.x - oldEn.x, e.y - oldEn.y) < 5);
+            if (!stillAlive && oldEn.hp > 0) {
+                for (let j = 0; j < 8; j++) {
+                    decals.push({
+                        x: oldEn.x + (Math.random() - 0.5) * 40,
+                        y: oldEn.y + (Math.random() - 0.5) * 40,
+                        size: 5 + Math.random() * 8,
+                        color: '#400',
+                        alpha: 0.5
+                    });
+                }
+            }
+        });
+
+        // 2. 血腳印邏輯
+        // 檢查玩家是否踩在血跡（decals）上
+        const onBlood = decals.some(d => Math.hypot(player.x - d.x, player.y - d.y) < 20);
+        if (onBlood) bloodOnBoots = 15; // 踩到血，鞋子沾滿血
+
+        if (bloodOnBoots > 0) {
+            // 移動一段距離留下一個腳印
+            if ((keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD']) && Math.random() > 0.8) {
+                decals.push({
+                    x: player.x,
+                    y: player.y,
+                    size: 3,
+                    color: '#300',
+                    alpha: (bloodOnBoots / 15) * 0.3
+                });
+                bloodOnBoots--;
+            }
+        }
+    };
+
+    const originalDraw = window.draw;
+    window.draw = function() {
+        originalDraw();
+
+        // 3. 黑暗呼吸感 (環境壓迫)
+        if (gameStarted) {
+            let breath = Math.sin(Date.now() / 1500) * 0.05;
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * (0.4 + breath),
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.9
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    };
+})();
+// --- 地獄視覺補丁：深紅暈眩與幽靈幻影 ---
+(function injectCrimsonTrauma() {
+    const originalDraw = window.draw;
+    const originalPlaySound = window.playSound;
+    let bloodTrauma = 0; // 用於控制受傷後的暈眩程度
+
+    // 2. 攔截音效：當被攻擊時觸發深紅暈眩
+    window.playSound = function(type) {
+        originalPlaySound(type);
+        if (type === 'hit') {
+            bloodTrauma = 40; // 設定暈眩強度 (深紅色深淺)
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製
+        originalDraw();
+
+        // 3. 地獄幻影 (心理壓迫) - 保留原本模糊黑影效果
+        if (gameStarted && Math.random() > 0.997) {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            
+            let ghostAng = player.angle + Math.PI + (Math.random() - 0.5) * 2;
+            let dist = 180 + Math.random() * 120;
+            let gx = player.x + Math.cos(ghostAng) * dist;
+            let gy = player.y + Math.sin(ghostAng) * dist;
+            
+            ctx.globalAlpha = 0.12;
+            ctx.fillStyle = '#000';
+            ctx.filter = 'blur(5px)'; 
+            ctx.beginPath();
+            ctx.ellipse(gx, gy, 10, 20, Math.random() * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 2. 受傷視覺深紅暈眩 (Crimson Vignette & Grayscale)
+        if (bloodTrauma > 0) {
+            // A. 深紅色邊框暈眩 (Vignette) - 模擬視野被血色侵佔
+            ctx.save();
+            let grad = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.2,
+                canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+            );
+            grad.addColorStop(0, 'rgba(0, 0, 0, 0)'); // 中心透明
+            grad.addColorStop(1, `rgba(100, 0, 0, ${bloodTrauma / 60})`); // 邊緣深紅
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // B. 畫面失焦與灰階 - 模擬重創瞬間的生理反應
+            // 使用 CSS Filter 實現動態灰階與模糊
+            // 灰階讓世界失去生機，模糊模擬暈眩
+            // 灰階程度與模糊程度隨 bloodTrauma 遞減
+            canvas.style.filter = `grayscale(${bloodTrauma * 2.5}%) blur(${bloodTrauma / 8}px)`;
+            bloodTrauma -= 0.6; // 緩慢恢復 (數值越小恢復越慢)
+        } else {
+            // 完全恢復後移除 Filter
+            canvas.style.filter = 'none';
+        }
+    };
+})();
+// --- 地獄視覺補丁：生理心跳與環境噪點 ---
+(function injectVisceralHorror() {
+    const originalDraw = window.draw;
+    const originalUpdate = window.update;
+
+    window.update = function() {
+        originalUpdate();
+        
+        // 1. 生理性顫抖：當 HP 低於 30% 時，玩家移動會伴隨不穩定的震動
+        if (player.hp < 30 && (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD'])) {
+            player.shake += 0.5;
+        }
+    };
+
+    window.draw = function() {
+        // 先執行原始繪製（包含你之前加的深紅暈眩與幻影）
+        originalDraw();
+
+        // 2. 垂死心跳視覺 (Pulsing Distress)
+        // 當 HP 低於 40% 時，畫面會隨心跳律動縮放，模擬失血過多時的耳鳴與視覺跳動
+        if (gameStarted && player.hp < 40) {
+            // 心跳頻率隨血量降低而加快
+            let pulseSpeed = player.hp < 15 ? 150 : 300;
+            let pulse = Math.sin(Date.now() / pulseSpeed) * 0.02;
+            canvas.style.transform = `scale(${1 + pulse})`;
+            
+            // 隨心跳同步噴出微弱紅光
+            if (pulse > 0.015) {
+                ctx.save();
+                ctx.globalAlpha = 0.1;
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        } else if (player.hp >= 40) {
+            canvas.style.transform = `scale(1)`;
+        }
+
+        // 3. 環境噪點 (Film Grain & Static)
+        // 模擬一種被詛咒的錄影帶質感，增加畫面的顆粒感與不穩定性
+        if (gameStarted) {
+            ctx.save();
+            ctx.globalAlpha = 0.04; // 極輕微，增加質感但不擋視線
+            for (let i = 0; i < 8; i++) {
+                // 隨機紅/白色橫紋干擾
+                ctx.fillStyle = Math.random() > 0.5 ? '#f00' : '#fff';
+                ctx.fillRect(0, Math.random() * canvas.height, canvas.width, 1);
+            }
+            
+            // 隨機噪點顆粒
+            for (let i = 0; i < 50; i++) {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+            }
+            ctx.restore();
+        }
+    };
+})();
+// --- 地獄空間感與動態照明補丁 ---
+(function injectVolumetricHell() {
+    const originalDraw = window.draw;
+    const originalFire = window.fireShotgun;
+    let flashIntensity = 0; // 控制開槍瞬間的亮度
+
+    // 1. 槍口火光：開槍時瞬間提高環境亮度
+    window.fireShotgun = function() {
+        originalFire();
+        flashIntensity = 1.0; // 瞬間滿亮度
+    };
+
+    window.draw = function() {
+        // 在原始繪製前處理火光閃爍
+        if (flashIntensity > 0) {
+            ctx.save();
+            ctx.globalAlpha = flashIntensity * 0.2;
+            ctx.fillStyle = '#ffaa44'; // 暖色調火光
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            flashIntensity -= 0.15; // 火光快速消退
+        }
+
+        originalDraw();
+
+        // 2. 手電筒光束塵埃 (Dust Motes)
+        if (gameStarted) {
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#fff';
+            
+            for (let i = 0; i < 20; i++) {
+                // 只在玩家前方的一定範圍內生成塵埃
+                let dustAng = player.angle + (Math.random() - 0.5) * 1.5;
+                let dist = Math.random() * 300;
+                let dx = player.x + Math.cos(dustAng) * dist;
+                let dy = player.y + Math.sin(dustAng) * dist;
+                
+                // 塵埃微弱地上下浮動
+                let drift = Math.sin(Date.now() / 1000 + i) * 5;
+                ctx.beginPath();
+                ctx.arc(dx, dy + drift, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 3. 雷達虛假殘影 (Ghost Blips)
+        // 當 HP < 50% 時，雷達會隨機出現短暫的虛假紅點
+        if (gameStarted && player.hp < 50 && Math.random() > 0.98) {
+            let rx = 20 + Math.random() * 110;
+            let ry = 20 + Math.random() * 110;
+            ctx.save();
+            ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(rx, ry, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    };
+})();
+// --- 地獄視覺補丁：僅保留槍火震動模糊 ---
+(function injectMuzzleBlurOnly() {
+    const originalDraw = window.draw;
+    const originalFire = window.fireShotgun;
+    let blastBlur = 0; // 控制模糊強度
+
+    // 攔截開槍動作
+    window.fireShotgun = function() {
+        originalFire();
+        blastBlur = 12; // 開槍瞬間設定模糊起始值
+    };
+
+    window.draw = function() {
+        // 在繪製前應用 CSS 濾鏡效果
+        if (blastBlur > 0) {
+            // 模擬震動與強光感：結合模糊與亮度提升
+            canvas.style.filter = `blur(${blastBlur}px) brightness(${1 + blastBlur/15})`;
+            blastBlur -= 1.5; // 模糊快速消退
+        } else {
+            // 恢復正常視野（除非有其他受傷特效正在運行）
+            if (player.hp >= 30) {
+                canvas.style.filter = 'none';
+            }
+        }
+
+        originalDraw();
+    };
+})();
+// --- 生理反饋補丁：視網膜噴血與滴落效果 ---
+(function injectVisceralBloodSplatter() {
+    const originalDraw = window.draw;
+    let lastPlayerHP = 100; // 記錄上次的 HP 用於比對受傷
+    window.screenBloods = []; // 存放螢幕上的血跡粒子
+
+    window.draw = function() {
+        // 1. 檢測玩家受傷（HP 減少）
+        if (gameStarted && player.hp < lastPlayerHP) {
+            let damage = lastPlayerHP - player.hp;
+            // 根據受傷程度生成 3-8 個血斑
+            let numSplats = Math.min(8, Math.max(3, Math.floor(damage / 5)));
+            
+            for (let i = 0; i < numSplats; i++) {
+                window.screenBloods.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    // 血斑大小隨機
+                    size: 15 + Math.random() * 25,
+                    // 隨機生命值（存留時間）
+                    life: 150 + Math.random() * 100,
+                    // 滴落速度（HP 越低，滴越快，模擬虛弱）
+                    vel: 0.5 + (1 - player.hp / 100) * 1.5,
+                    opacity: 0.8
+                });
+            }
+        }
+        lastPlayerHP = player.hp;
+
+        originalDraw(); // 繪製原本遊戲畫面
+
+        // 2. 繪製並更新視網膜血跡 (螢幕 HUD 層)
+        if (gameStarted && window.screenBloods.length > 0) {
+            ctx.save();
+            // 確保血跡黏在螢幕上，不受攝像機移動影響
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            
+            for (let i = window.screenBloods.length - 1; i >= 0; i--) {
+                let b = window.screenBloods[i];
+                
+                // 繪製血斑（深暗紅色渐層，邊緣模糊）
+                let grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.size);
+                grad.addColorStop(0, `rgba(100, 0, 0, ${b.opacity})`);
+                grad.addColorStop(0.7, `rgba(60, 0, 0, ${b.opacity * 0.8})`);
+                grad.addColorStop(1, 'rgba(40, 0, 0, 0)');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 滴落邏輯：血斑緩緩向下移動
+                b.y += b.vel;
+                
+                // 生命週期管理
+                b.life--;
+                // 在生命最後階段緩緩淡出
+                if (b.life < 50) {
+                    b.opacity -= 0.016;
+                }
+
+                // 移除死亡的血跡
+                if (b.opacity <= 0) {
+                    window.screenBloods.splice(i, 1);
+                }
+            }
+            ctx.restore();
+        }
+    };
+})();
+// --- 行動端觸控補丁 (Mobile Touch Patch) ---
+(function injectMobileControls() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) return;
+
+    // 1. 強制樣式調整：確保遊戲填滿手機螢幕
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #game-container { flex-direction: column; width: 100vw; height: 100vh; border: none; }
+        #sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; padding: 5px; font-size: 10px; border-left: none; border-top: 2px solid #4a0000; }
+        .ui-box { width: 48%; margin-bottom: 5px; margin-right: 2%; }
+        #radar-container, .controls { display: none; }
+        canvas { width: 100vw !important; height: auto !important; touch-action: none; }
+        .menu-title { font-size: 40px; }
+    `;
+    document.head.appendChild(style);
+
+    // 2. 虛擬搖桿狀態
+    let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+    
+    // 3. 覆蓋原本的 Update 邏輯，注入觸控位移
+    const originalUpdate = window.update;
+    window.update = function() {
+        if (joystick.active) {
+            const dist = Math.hypot(joystick.moveX, joystick.moveY);
+            if (dist > 5) {
+                const angle = Math.atan2(joystick.moveY, joystick.moveX);
+                const speed = player.speed;
+                let dx = Math.cos(angle) * speed;
+                let dy = Math.sin(angle) * speed;
+                
+                if (!isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
+                if (!isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
+                
+                // 行動端自動朝向移動方向
+                player.angle = angle;
+            }
+        }
+        originalUpdate();
+    };
+
+    // 4. 監聽觸控事件
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (!gameStarted) return;
+
+        for (let t of e.changedTouches) {
+            // 左半螢幕：移動搖桿
+            if (t.clientX < window.innerWidth / 2) {
+                joystick.active = true;
+                joystick.startX = t.clientX;
+                joystick.startY = t.clientY;
+            } 
+            // 右半螢幕：射擊
+            else {
+                // 更新射擊角度為當前觸控點相對於玩家位置
+                const rect = canvas.getBoundingClientRect();
+                const tx = (t.clientX - rect.left) * (canvas.width / rect.width);
+                const ty = (t.clientY - rect.top) * (canvas.height / rect.height);
+                player.angle = Math.atan2(ty - (player.y - camera.y), tx - (player.x - camera.x));
+                
+                window.fireShotgun();
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        for (let t of e.changedTouches) {
+            if (joystick.active && t.clientX < window.innerWidth / 2) {
+                joystick.moveX = t.clientX - joystick.startX;
+                joystick.moveY = t.clientY - joystick.startY;
+            }
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        for (let t of e.changedTouches) {
+            if (t.clientX < window.innerWidth / 2) {
+                joystick.active = false;
+                joystick.moveX = 0;
+                joystick.moveY = 0;
+            }
+        }
+    });
+
+    // 5. 效能修補：在手機上降低粒子數量
+    const originalFire = window.fireShotgun;
+    window.fireShotgun = function() {
+        // 修改全局變量降低手機負擔
+        const prevPellets = window.PELLET_COUNT;
+        window.PELLET_COUNT = 4; // 減少彈丸
+        originalFire();
+        window.PELLET_COUNT = prevPellets;
+    };
+    
+    console.log("Hell-Gunner: Mobile Touch Patch Applied.");
+})();
+// 移除原本最底部的 loop(); 呼叫
+// 只保留 initLevel(); 讓背景地圖先生成
+initLevel(); 
+</script>
+
+</body>
+</html>
