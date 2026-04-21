@@ -13,28 +13,57 @@
 @media screen and (max-width: 900px) and (orientation: landscape) {
     #sidebar {
         position: absolute;
-        right: 0;
-        top: 0;
-        width: 160px; /* 從 300px 縮小到 160px */
-        height: 100dvh;
-        background: rgba(10, 0, 0, 0.6); /* 增加透明度，讓背景若隱若現 */
-        border-left: 1px solid rgba(136, 0, 0, 0.5);
-        padding: 10px;
-        pointer-events: none; /* 核心：防止側邊欄阻擋觸控，讓射擊更順暢 */
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: transparent; /* 去除黑色背景 */
+        border: none;
+        padding: 0;
+        pointer-events: none; /* 關鍵：讓點擊穿透到地圖 */
+        display: block;
     }
 
-    /* 在手機上隱藏較佔空間的文字說明 */
-    .controls, .label:nth-of-type(4), #radar-container {
-        display: none; 
+    /* 將生命值移到左上角 */
+    .ui-box:nth-of-type(1) {
+        position: absolute;
+        top: 10px; left: 10px;
+        width: 150px;
     }
-    
-    /* 如果想保留雷達，可以只顯示雷達但縮小它 */
+
+    /* 將目標進度移到中上方（簡化版） */
+    .ui-box:nth-of-type(2) {
+        position: absolute;
+        top: 10px; left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        text-align: center;
+    }
+    #task-ui { font-size: 12px; }
+
+    /* 將裝填條移到正下方，方便用餘光看 */
+    .ui-box:nth-of-type(3) {
+        position: absolute;
+        bottom: 20px; left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+    }
+
+    /* 將雷達縮小並移到右上角 */
+    .ui-box:nth-of-type(4) {
+        position: absolute;
+        top: 10px; right: 10px;
+        width: 120px;
+    }
     #radar-container {
-        display: block;
-        width: 160px;
-        height: 120px;
-        transform: scale(0.8);
+        width: 120px; height: 90px;
+        transform: scale(1);
     }
+    #radarCanvas { width: 120px; height: 90px; }
+
+    /* 手機版徹底隱藏說明文字，增加畫面淨空度 */
+    .controls { display: none; }
+    .label { font-size: 9px; }
+    .value { font-size: 16px; }
 }
 /* 預設隱藏提示 */
 #orientation-overlay {
@@ -424,27 +453,77 @@ if (isMobile) {
 }
 
 // --- 2. 觸控核心監聽 ---
+// 【優化 1】第一時間阻止瀏覽器預設行為，消滅延遲感
 window.addEventListener('touchstart', e => {
+    e.preventDefault(); 
     for (let touch of e.changedTouches) {
-        const lx = leftContainer.getBoundingClientRect();
-        const rx = rightContainer.getBoundingClientRect();
-
-        // 判定左搖桿
-        if (touch.clientX > lx.left && touch.clientX < lx.right && touch.clientY > lx.top && touch.clientY < lx.bottom) {
+        // 【優化 2】放棄死板的小框框，改用「螢幕左右半邊」盲操判定
+        if (touch.clientX < window.innerWidth / 2) {
+            // 點擊左半螢幕 = 控制左搖桿
             leftJoy.active = true;
             leftJoy.touchId = touch.identifier;
-            leftJoy.startX = lx.left + lx.width / 2;
-            leftJoy.startY = lx.top + lx.height / 2;
-        }
-        // 判定右搖桿
-        if (touch.clientX > rx.left && touch.clientX < rx.right && touch.clientY > rx.top && touch.clientY < rx.bottom) {
+            leftJoy.startX = touch.clientX;
+            leftJoy.startY = touch.clientY;
+        } else {
+            // 點擊右半螢幕 = 控制右搖桿
             rightJoy.active = true;
             rightJoy.touchId = touch.identifier;
-            rightJoy.startX = rx.left + rx.width / 2;
-            rightJoy.startY = rx.top + rx.height / 2;
+            rightJoy.startX = touch.clientX;
+            rightJoy.startY = touch.clientY;
         }
     }
 }, { passive: false });
+
+window.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (let touch of e.touches) {
+        const maxDist = 50;
+
+        if (leftJoy.active && touch.identifier === leftJoy.touchId) {
+            let dx = touch.clientX - leftJoy.startX;
+            let dy = touch.clientY - leftJoy.startY;
+            let dist = Math.hypot(dx, dy);
+            if (dist > maxDist) { dx *= maxDist/dist; dy *= maxDist/dist; }
+            leftJoy.moveX = dx / maxDist;
+            leftJoy.moveY = dy / maxDist;
+            leftKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        }
+
+        if (rightJoy.active && touch.identifier === rightJoy.touchId) {
+            let dx = touch.clientX - rightJoy.startX;
+            let dy = touch.clientY - rightJoy.startY;
+            let dist = Math.hypot(dx, dy);
+            if (dist > maxDist) { dx *= maxDist/dist; dy *= maxDist/dist; }
+            rightJoy.moveX = dx / maxDist;
+            rightJoy.moveY = dy / maxDist;
+            rightKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            
+            if (dist > 5) {
+                player.angle = Math.atan2(dy, dx);
+                if (dist > 25) fireShotgun();
+            }
+        }
+    }
+}, { passive: false });
+
+// 【優化 3】合併處理 touchend 與 touchcancel，防止手指滑出螢幕導致搖桿卡死
+function handleTouchEnd(e) {
+    for (let touch of e.changedTouches) {
+        if (touch.identifier === leftJoy.touchId) {
+            leftJoy.active = false;
+            leftJoy.moveX = 0; leftJoy.moveY = 0;
+            leftKnob.style.transform = `translate(-50%, -50%)`;
+        }
+        if (touch.identifier === rightJoy.touchId) {
+            rightJoy.active = false;
+            rightJoy.moveX = 0; rightJoy.moveY = 0;
+            rightKnob.style.transform = `translate(-50%, -50%)`;
+        }
+    }
+}
+
+window.addEventListener('touchend', handleTouchEnd);
+window.addEventListener('touchcancel', handleTouchEnd); // 補上防卡死機制
 
 window.addEventListener('touchmove', e => {
     e.preventDefault(); // 防止捲動
@@ -605,9 +684,11 @@ if (en.hp <= 0) {
 }
 function resizeCanvas() {
     const ratio = 1000 / 750;
+    // 在手機橫屏時，我們希望 Canvas 填滿全螢幕
     if (window.innerWidth / window.innerHeight > ratio) {
+        canvas.style.width = '100vw'; // 強制填滿寬度
         canvas.style.height = '100vh';
-        canvas.style.width = 'auto';
+        canvas.style.objectFit = 'cover'; // 或者是 'contain' 視你地圖邊緣處理而定
     } else {
         canvas.style.width = '100vw';
         canvas.style.height = 'auto';
