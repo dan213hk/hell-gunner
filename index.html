@@ -4,7 +4,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="UTF-8">
     <title>Hell-Gunner</title>
-    <style>
+    <style>/* 針對手機橫屏狀態下的優化 */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+    #game-container {
+        flex-direction: row; /* 確保橫向排列 */
+        border: none;
+    }
+    
+    #sidebar {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 180px; /* 縮小側邊欄 */
+        height: 100%;
+        background: rgba(10, 0, 0, 0.6); /* 半透明，不遮擋視野 */
+        border-left: 2px solid #4a0000;
+        pointer-events: none; /* 點擊穿透，不影響右搖桿 */
+        padding: 10px;
+    }
+
+    /* 在手機上隱藏較佔空間的文字說明 */
+    .controls, .label:nth-of-type(4), #radar-container {
+        display: none; 
+    }
+    
+    /* 如果想保留雷達，可以只顯示雷達但縮小它 */
+    #radar-container {
+        display: block;
+        width: 160px;
+        height: 120px;
+        transform: scale(0.8);
+    }
+}
+/* 預設隱藏提示 */
+#orientation-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000;
+    color: #ff0000;
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* 當螢幕寬度小於高度時（直式），顯示提示 */
+@media screen and (orientation: portrait) {
+    #orientation-overlay {
+        display: flex;
+    }
+}
+
+.rotate-icon {
+    width: 60px;
+    height: 60px;
+    border: 3px solid #ff0000;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    animation: rotate-anim 2s infinite;
+}
+
+@keyframes rotate-anim {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+    100% { transform: rotate(-90deg); }
+}
 #game-container {
     max-width: 100vw;
     max-height: 100vh;
@@ -119,14 +185,15 @@ body {
     </style>
 </head>
 <body>
-
-<div id="joystick-left" class="joystick-container">
-    <div id="knob" class="joystick-knob"></div>
+<div id="orientation-overlay">
+    <div class="rotate-icon"></div>
+    <div style="font-weight: bold; letter-spacing: 2px;">請將手機轉至橫向以進入地獄</div>
 </div>
+<div id="joystick-left" class="joystick-container">
+    <div id="knob-left" class="joystick-knob"></div> </div>
 
 <div id="joystick-right" class="joystick-container" style="left: auto; right: 50px; border-color: rgba(0, 255, 255, 0.3);">
     <div id="knob-right" class="joystick-knob" style="background: rgba(0, 255, 255, 0.5);"></div>
-</div>
 </div>
 <div id="start-menu">
     <div class="menu-title">HELL-GUNNER</div>
@@ -529,7 +596,18 @@ if (en.hp <= 0) {
         }
     }
 }
-
+function resizeCanvas() {
+    const ratio = 1000 / 750;
+    if (window.innerWidth / window.innerHeight > ratio) {
+        canvas.style.height = '100vh';
+        canvas.style.width = 'auto';
+    } else {
+        canvas.style.width = '100vw';
+        canvas.style.height = 'auto';
+    }
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas(); // 初始化時執行一次
 function initLevel() {
     decals = []; // [新增] 清空上一層的血跡
     if (level > 1) player.hp = Math.min(100, player.hp + 20);
@@ -1017,16 +1095,28 @@ function loop() { update(); draw(); requestAnimationFrame(loop); }
 
 let gameStarted = false;
 
-function startGame() {
+async function startGame() {
     if (gameStarted) return;
 
-    // 嘗試進入全螢幕（在 Android 上效果較好）
     const docElm = document.documentElement;
-    if (docElm.requestFullscreen) docElm.requestFullscreen();
-    else if (docElm.webkitRequestFullScreen) docElm.webkitRequestFullScreen();
-
-    if (audioCtx.state === 'suspended') audioCtx.resume();
     
+    try {
+        // 1. 進入全螢幕
+        if (docElm.requestFullscreen) {
+            await docElm.requestFullscreen();
+        } else if (docElm.webkitRequestFullScreen) {
+            await docElm.webkitRequestFullScreen();
+        }
+
+        // 2. 鎖定橫屏 (僅在全螢幕下有效)
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape').catch(err => {
+                console.log("方向鎖定被拒絕: ", err);
+            });
+        }
+    } catch (e) {
+        console.log("全螢幕或鎖定失敗: ", e);
+    }
     // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
