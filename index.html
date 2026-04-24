@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hell-Gunner</title>
     <style>
 /* 開始選單專用樣式 */
@@ -28,12 +29,13 @@
 }
 
 .start-btn {
-    padding: 15px 50px;
-    background: transparent;
-    border: 2px solid #ff0000;
+    background: #800;
     color: #ff0000;
-    font-size: 24px; cursor: pointer;
-    font-family: inherit;
+    border: 2px solid #ff0000;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: crosshair;
     transition: 0.3s;
     box-shadow: 0 0 10px rgba(255,0,0,0.3);
 }
@@ -43,27 +45,105 @@
     color: #000;
     box-shadow: 0 0 30px #ff0000;
 }
-        body { 
-            margin: 0; background: #000; color: #ff0000; 
-            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
-            display: flex; justify-content: center; align-items: center; 
+        body {
+          margin: 0; background: #000; color: #ff0000;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex; justify-content: center; align-items: center;
             height: 100vh; overflow: hidden;
+            user-select: none; /* 禁用文字選取 */
+            -webkit-user-select: none; /* Chrome/Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
+            cursor: crosshair !important;
         }
         #game-container { display: flex; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; }
-        canvas { background: #020000; display: block; cursor: crosshair; }
-        #sidebar { width: 300px; background: #0a0000; border-left: 4px solid #4a0000; padding: 20px; display: flex; flex-direction: column; }
-        .ui-box { width: 100%; margin-bottom: 20px; }
-        .label { font-size: 11px; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; }
-        .value { font-size: 22px; font-weight: bold; margin-top: 5px; color: #ff3333; }
-        #radar-container { width: 240px; height: 180px; border: 2px solid #4a0000; background: #030303; margin: 10px auto; position: relative; overflow: hidden; }
-        #radarCanvas { width: 240px; height: 180px; }
-        #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 10px; opacity: 0; transition: 0.5s; pointer-events: none; }
-        .hp-bar-bg { width: 100%; height: 12px; background: #200; border: 1px solid #700; margin-top: 10px; }
+        canvas { background: #020000; display: block; cursor: crosshair !important; }
+        #sidebar { width: 20vw; min-width: 200px; max-width: 350px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; }
+        .ui-box { width: 100%; margin-bottom: 2vh; }
+        .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; }
+        .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
+        #radar-container { width: 80%; height: 15vh; border: 2px solid #4a0000; background: #030303; margin: 1vh auto; position: relative; overflow: hidden; }
+        #radarCanvas { width: 100%; height: 100%; }
+        #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 0.6vw; opacity: 0; transition: 0.5s; pointer-events: none; }
+        .hp-bar-bg { width: 100%; height: 1vh; background: #200; border: 1px solid #700; margin-top: 0.8vh; }
         #hp-fill { height: 100%; background: linear-gradient(90deg, #800, #ff0000); width: 100%; transition: 0.1s; }
-        .reload-bar-bg { width: 100%; height: 6px; background: #111; margin-top: 8px; border: 1px solid #333; }
+        .reload-bar-bg { width: 100%; height: 0.5vh; background: #111; margin-top: 0.6vh; border: 1px solid #333; overflow: hidden; }
         #reload-fill { height: 100%; background: #00ccff; width: 0%; box-shadow: 0 0 10px #00ccff; }
-        .task-list { font-size: 14px; color: #00ffaa; margin-top: 10px; font-weight: bold; }
-        .controls { font-size: 11px; color: #666; margin-top: auto; line-height: 1.6; }
+        #grenade-fill { height: 100%; background: #ff6600; box-shadow: 0 0 10px #ff6600; }
+        .task-list { font-size: 1vw; color: #00ffaa; margin-top: 0.8vh; font-weight: bold; }
+        .controls { font-size: 0.7vw; color: #666; margin-top: auto; line-height: 1.6; }
+        * { cursor: crosshair !important; }
+        #death-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .death-stats {
+            color: #888;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .death-stats span {
+            color: #f00;
+            font-weight: bold;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #portrait-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #ff0000;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        #portrait-warning h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        #portrait-warning p {
+            font-size: 18px;
+            color: #880000;
+        }
+        @media screen and (orientation: portrait) {
+            #portrait-warning {
+                display: flex;
+            }
+            #game-container {
+                display: none;
+            }
+            #start-menu, #death-menu {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -71,6 +151,19 @@
     <div class="menu-title">HELL-GUNNER</div>
     <div class="menu-subtitle">你能殺往第18層嗎？</div>
     <button class="start-btn" onclick="startGame()">開始任務</button>
+</div>
+<div id="portrait-warning">
+    <h1>請使用橫屏</h1>
+    <p>遊戲需要橫屏模式才能正常遊玩</p>
+    <p>請將設備旋轉至橫屏</p>
+</div>
+<div id="death-menu" style="display: none;">
+    <div class="menu-title">任務失敗</div>
+    <div class="menu-subtitle">你已被深淵吞噬</div>
+    <div class="death-stats">
+        <div>到達層數: <span id="death-level">1</span></div>
+    </div>
+    <button class="start-btn" onclick="restartGame()">重新挑戰</button>
 </div>
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
@@ -90,6 +183,10 @@
             <div class="reload-bar-bg"><div id="reload-fill"></div></div>
         </div>
         <div class="ui-box">
+            <div class="label">手榴彈 (GRENADE)</div>
+            <div class="reload-bar-bg"><div id="grenade-fill"></div></div>
+        </div>
+        <div class="ui-box">
             <div class="label">掃描雷達 (SONAR)</div>
             <div id="radar-container">
                 <div id="radar-ping-label">SCANNING...</div>
@@ -100,7 +197,7 @@
     <div class="label" style="margin-bottom: 5px;">戰術簡報 (INTELLIGENCE)</div>
     ● 進行血祭（收集 3 個五芒星）以開啟傳送門。<br>
     ● 按 *WASD* 移動，*滑鼠左鍵* 射擊 *Space* 戰術迴避<br>
-    ● 選擇武器 按 1) 手槍 2) 散彈槍 3) 輕機槍<br>
+    ● 選擇武器 按 1) 手槍 2) 散彈槍 3) 輕機槍 右鍵使用手榴彈<br>
     <div class="label" style="margin-bottom: 5px;">威脅評估 (THREAT LOG)</div>
     <span style="color: #ffff00;">● 迅捷者 (Yellow Eye):</span> 體型小、移速極快，群體出沒時極其危險。抗擊退力弱。<br>
     <span style="color: #ff0000;">● 漫遊屍 (Red Eye):</span> 標準型惡魔，體力與速度均衡。最常見的威脅。<br>
@@ -113,84 +210,571 @@
 
 // --- 1. 音效引擎 ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSound(type) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
 
-    if (type === 'shot') { // 強化版散彈槍音效
-        // 1. 火藥爆發聲 (尖銳的高頻)
-        const oscPop = audioCtx.createOscillator();
-        const gainPop = audioCtx.createGain();
-        oscPop.type = 'sawtooth';
-        oscPop.frequency.setValueAtTime(220, audioCtx.currentTime);
-        oscPop.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
-        gainPop.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gainPop.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-        oscPop.connect(gainPop); gainPop.connect(audioCtx.destination);
-
-        // 2. 重音低音 (爆發後的震動感)
-        const oscBoom = audioCtx.createOscillator();
-        const gainBoom = audioCtx.createGain();
-        oscBoom.type = 'triangle';
-        oscBoom.frequency.setValueAtTime(80, audioCtx.currentTime);
-        oscBoom.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.2);
-        gainBoom.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainBoom.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-        oscBoom.connect(gainBoom); gainBoom.connect(audioCtx.destination);
-
-        // 3. 模擬金屬餘韻 (White Noise 的簡化版：高頻雜訊)
-        const oscMetal = audioCtx.createOscillator();
-        const gainMetal = audioCtx.createGain();
-        oscMetal.type = 'square'; // 方波產生較多諧波
-        oscMetal.frequency.setValueAtTime(1200, audioCtx.currentTime);
-        gainMetal.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gainMetal.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
-        oscMetal.connect(gainMetal); gainMetal.connect(audioCtx.destination);
-
-        oscPop.start(); oscBoom.start(); oscMetal.start();
-        oscPop.stop(audioCtx.currentTime + 0.1);
-        oscBoom.stop(audioCtx.currentTime + 0.25);
-        oscMetal.stop(audioCtx.currentTime + 0.05);
-
-    } else if (type === 'hit') { // 模擬被咬的清脆咬合聲 (Crunch/Bite)
-        // 1. 牙齒咬合的高頻「喀喳」聲
-        const oscCrunch = audioCtx.createOscillator();
-        const gainCrunch = audioCtx.createGain();
-        oscCrunch.type = 'triangle'; // 三角波比較有肉質感
-        oscCrunch.frequency.setValueAtTime(400, audioCtx.currentTime);
-        oscCrunch.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-        gainCrunch.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gainCrunch.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
-        
-        oscCrunch.connect(gainCrunch);
-        gainCrunch.connect(audioCtx.destination);
-        
-        // 2. 低頻的受傷撞擊聲
-        const oscThump = audioCtx.createOscillator();
-        const gainThump = audioCtx.createGain();
-        oscThump.type = 'sine';
-        oscThump.frequency.setValueAtTime(80, audioCtx.currentTime);
-        gainThump.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainThump.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
-        
-        oscThump.connect(gainThump);
-        gainThump.connect(audioCtx.destination);
-        
-        oscCrunch.start();
-        oscThump.start();
-        oscCrunch.stop(audioCtx.currentTime + 0.08);
-        oscThump.stop(audioCtx.currentTime + 0.15);
-
-    } else if (type === 'pickup') { // 撿起物件聲
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+// 創建白噪聲函數（用於模擬爆炸、槍聲等）
+function createNoiseBuffer() {
+    const bufferSize = audioCtx.sampleRate * 2; // 2秒的噪聲
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
     }
+    return buffer;
+}
+
+const noiseBuffer = createNoiseBuffer();
+
+function playSound(type, weaponType = 1) {
+    if (type === 'shot') {
+        playWeaponSound(weaponType);
+    } else if (type === 'hit') {
+        playHitSound();
+    } else if (type === 'pickup') {
+        playPickupSound();
+    } else if (type === 'player_death') {
+        playPlayerDeathSound();
+    } else if (type === 'enemy_death') {
+        playEnemyDeathSound();
+    } else if (type === 'grenade_throw') {
+        playGrenadeThrowSound();
+    } else if (type === 'grenade_explosion') {
+        playGrenadeExplosionSound();
+    } else if (type === 'weapon_switch') {
+        playWeaponSwitchSound();
+    } else if (type === 'level_complete') {
+        playLevelCompleteSound();
+    }
+}
+
+// 手槍射擊音效 - 清脆的單發聲
+function playPistolShot() {
+    const t = audioCtx.currentTime;
+
+    // 1. 槍聲主體（噪聲）- 更短更清脆
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.4, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+
+    // 2. 低頻衝擊 - 更強烈的"啪"聲
+    const boom = audioCtx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(200, t);
+    boom.frequency.exponentialRampToValueAtTime(80, t + 0.08);
+    const boomGain = audioCtx.createGain();
+    boomGain.gain.setValueAtTime(0.5, t);
+    boomGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    boom.connect(boomGain);
+    boomGain.connect(audioCtx.destination);
+
+    // 3. 高頻金屬聲 - 更清脆
+    const crack = audioCtx.createOscillator();
+    crack.type = 'sawtooth';
+    crack.frequency.setValueAtTime(1200, t);
+    crack.frequency.exponentialRampToValueAtTime(300, t + 0.04);
+    const crackGain = audioCtx.createGain();
+    crackGain.gain.setValueAtTime(0.2, t);
+    crackGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+    crack.connect(crackGain);
+    crackGain.connect(audioCtx.destination);
+
+    // 4. 回聲效果
+    const echo = audioCtx.createOscillator();
+    echo.type = 'sine';
+    echo.frequency.setValueAtTime(150, t + 0.05);
+    const echoGain = audioCtx.createGain();
+    echoGain.gain.setValueAtTime(0.1, t + 0.05);
+    echoGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    echo.connect(echoGain);
+    echoGain.connect(audioCtx.destination);
+
+    noise.start(t);
+    noise.stop(t + 0.1);
+    boom.start(t);
+    boom.stop(t + 0.15);
+    crack.start(t);
+    crack.stop(t + 0.06);
+    echo.start(t + 0.05);
+    echo.stop(t + 0.2);
+}
+
+// 散彈槍射擊音效 - 強烈的爆炸聲
+function playShotgunShot() {
+    const t = audioCtx.currentTime;
+
+    // 1. 主要爆炸噪聲 - 更強烈
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.8, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+
+    // 2. 低頻重擊 - 更強烈的"轟"聲
+    const boom = audioCtx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(80, t);
+    boom.frequency.exponentialRampToValueAtTime(20, t + 0.3);
+    const boomGain = audioCtx.createGain();
+    boomGain.gain.setValueAtTime(0.9, t);
+    boomGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    boom.connect(boomGain);
+    boomGain.connect(audioCtx.destination);
+
+    // 3. 槍機聲 - 更清脆
+    const click = audioCtx.createOscillator();
+    click.type = 'square';
+    click.frequency.setValueAtTime(2500, t);
+    click.frequency.exponentialRampToValueAtTime(600, t + 0.08);
+    const clickGain = audioCtx.createGain();
+    clickGain.gain.setValueAtTime(0.25, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    click.connect(clickGain);
+    clickGain.connect(audioCtx.destination);
+
+    // 4. 彈殼落地聲（延遲）
+    const shell = audioCtx.createOscillator();
+    shell.type = 'triangle';
+    shell.frequency.setValueAtTime(500, t + 0.35);
+    shell.frequency.exponentialRampToValueAtTime(100, t + 0.6);
+    const shellGain = audioCtx.createGain();
+    shellGain.gain.setValueAtTime(0.12, t + 0.35);
+    shellGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+    shell.connect(shellGain);
+    shellGain.connect(audioCtx.destination);
+
+    // 5. 回聲效果
+    const echo = audioCtx.createOscillator();
+    echo.type = 'sine';
+    echo.frequency.setValueAtTime(60, t + 0.1);
+    const echoGain = audioCtx.createGain();
+    echoGain.gain.setValueAtTime(0.15, t + 0.1);
+    echoGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    echo.connect(echoGain);
+    echoGain.connect(audioCtx.destination);
+
+    noise.start(t);
+    noise.stop(t + 0.4);
+    boom.start(t);
+    boom.stop(t + 0.4);
+    click.start(t);
+    click.stop(t + 0.1);
+    shell.start(t + 0.35);
+    shell.stop(t + 0.6);
+    echo.start(t + 0.1);
+    echo.stop(t + 0.5);
+}
+
+// 輕機槍射擊音效 - 快速連發聲
+function playMp5Shot() {
+    const t = audioCtx.currentTime;
+
+    // 1. 快速噪聲爆發 - 更短更頻繁
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.35, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+
+    // 2. 中頻衝擊 - 更強烈的"突突"聲
+    const punch = audioCtx.createOscillator();
+    punch.type = 'sawtooth';
+    punch.frequency.setValueAtTime(400, t);
+    punch.frequency.exponentialRampToValueAtTime(120, t + 0.05);
+    const punchGain = audioCtx.createGain();
+    punchGain.gain.setValueAtTime(0.35, t);
+    punchGain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+    punch.connect(punchGain);
+    punchGain.connect(audioCtx.destination);
+
+    // 3. 高頻清脆聲 - 更清脆
+    const crack = audioCtx.createOscillator();
+    crack.type = 'square';
+    crack.frequency.setValueAtTime(1500, t);
+    crack.frequency.exponentialRampToValueAtTime(500, t + 0.03);
+    const crackGain = audioCtx.createGain();
+    crackGain.gain.setValueAtTime(0.18, t);
+    crackGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    crack.connect(crackGain);
+    crackGain.connect(audioCtx.destination);
+
+    // 4. 機械聲 - 模擬槍機運作
+    const mech = audioCtx.createOscillator();
+    mech.type = 'triangle';
+    mech.frequency.setValueAtTime(800, t);
+    mech.frequency.exponentialRampToValueAtTime(200, t + 0.04);
+    const mechGain = audioCtx.createGain();
+    mechGain.gain.setValueAtTime(0.1, t);
+    mechGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+    mech.connect(mechGain);
+    mechGain.connect(audioCtx.destination);
+
+    noise.start(t);
+    noise.stop(t + 0.06);
+    punch.start(t);
+    punch.stop(t + 0.08);
+    crack.start(t);
+    crack.stop(t + 0.05);
+    mech.start(t);
+    mech.stop(t + 0.06);
+}
+
+// 根據武器類型播放射擊音效
+function playWeaponSound(weaponType) {
+    if (weaponType === 1) {
+        playPistolShot();
+    } else if (weaponType === 2) {
+        playShotgunShot();
+    } else if (weaponType === 3) {
+        playMp5Shot();
+    }
+}
+
+// 受傷音效 - 更真實的肉體被擊中聲
+function playHitSound() {
+    const t = audioCtx.currentTime;
+    
+    // 1. 濕潤的撕裂聲
+    const tear = audioCtx.createOscillator();
+    tear.type = 'sawtooth';
+    tear.frequency.setValueAtTime(600, t);
+    tear.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+    const tearGain = audioCtx.createGain();
+    tearGain.gain.setValueAtTime(0.25, t);
+    tearGain.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+    tear.connect(tearGain);
+    tearGain.connect(audioCtx.destination);
+    
+    // 2. 低頻撞擊聲
+    const thud = audioCtx.createOscillator();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(80, t);
+    thud.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+    const thudGain = audioCtx.createGain();
+    thudGain.gain.setValueAtTime(0.35, t);
+    thudGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    thud.connect(thudGain);
+    thudGain.connect(audioCtx.destination);
+    
+    // 3. 呼吸聲（痛苦）
+    const breath = audioCtx.createOscillator();
+    breath.type = 'triangle';
+    breath.frequency.setValueAtTime(150, t + 0.1);
+    breath.frequency.setValueAtTime(120, t + 0.2);
+    const breathGain = audioCtx.createGain();
+    breathGain.gain.setValueAtTime(0.15, t + 0.1);
+    breathGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+    breath.connect(breathGain);
+    breathGain.connect(audioCtx.destination);
+    
+    tear.start(t);
+    tear.stop(t + 0.12);
+    thud.start(t);
+    thud.stop(t + 0.2);
+    breath.start(t + 0.1);
+    breath.stop(t + 0.3);
+}
+
+// 撿起物品音效
+function playPickupSound() {
+    const t = audioCtx.currentTime;
+    
+    const pickup = audioCtx.createOscillator();
+    pickup.type = 'sine';
+    pickup.frequency.setValueAtTime(400, t);
+    pickup.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+    pickup.frequency.exponentialRampToValueAtTime(1200, t + 0.2);
+    const pickupGain = audioCtx.createGain();
+    pickupGain.gain.setValueAtTime(0.15, t);
+    pickupGain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+    pickup.connect(pickupGain);
+    pickupGain.connect(audioCtx.destination);
+    pickup.start(t);
+    pickup.stop(t + 0.25);
+}
+
+// 玩家死亡音效 - 倒地、咳嗽、最後呼吸、心跳減慢
+function playPlayerDeathSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 倒地撞擊聲（低沉的撞擊）
+    const fall = audioCtx.createOscillator();
+    fall.type = 'sine';
+    fall.frequency.setValueAtTime(120, t);
+    fall.frequency.exponentialRampToValueAtTime(40, t + 0.25);
+    const fallGain = audioCtx.createGain();
+    fallGain.gain.setValueAtTime(0.3, t);
+    fallGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+    fall.connect(fallGain);
+    fallGain.connect(audioCtx.destination);
+
+    // 2. 咳嗽聲（喉嚨聲）
+    const cough = audioCtx.createOscillator();
+    cough.type = 'sawtooth';
+    cough.frequency.setValueAtTime(180, t + 0.15);
+    cough.frequency.exponentialRampToValueAtTime(60, t + 0.35);
+    const coughGain = audioCtx.createGain();
+    coughGain.gain.setValueAtTime(0.2, t + 0.15);
+    coughGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    cough.connect(coughGain);
+    coughGain.connect(audioCtx.destination);
+
+    // 3. 最後的呼吸聲（喘息）
+    const lastBreath = audioCtx.createOscillator();
+    lastBreath.type = 'sine';
+    lastBreath.frequency.setValueAtTime(250, t + 0.3);
+    lastBreath.frequency.exponentialRampToValueAtTime(100, t + 0.8);
+    const breathGain = audioCtx.createGain();
+    breathGain.gain.setValueAtTime(0.12, t + 0.3);
+    breathGain.gain.exponentialRampToValueAtTime(0.01, t + 1.0);
+    lastBreath.connect(breathGain);
+    breathGain.connect(audioCtx.destination);
+
+    // 4. 心跳減慢聲
+    const heartbeat1 = audioCtx.createOscillator();
+    heartbeat1.type = 'sine';
+    heartbeat1.frequency.setValueAtTime(70, t + 0.4);
+    const heartGain1 = audioCtx.createGain();
+    heartGain1.gain.setValueAtTime(0.25, t + 0.4);
+    heartGain1.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    heartbeat1.connect(heartGain1);
+    heartGain1.connect(audioCtx.destination);
+
+    const heartbeat2 = audioCtx.createOscillator();
+    heartbeat2.type = 'sine';
+    heartbeat2.frequency.setValueAtTime(60, t + 0.6);
+    const heartGain2 = audioCtx.createGain();
+    heartGain2.gain.setValueAtTime(0.2, t + 0.6);
+    heartGain2.gain.exponentialRampToValueAtTime(0.01, t + 0.7);
+    heartbeat2.connect(heartGain2);
+    heartGain2.connect(audioCtx.destination);
+
+    const heartbeat3 = audioCtx.createOscillator();
+    heartbeat3.type = 'sine';
+    heartbeat3.frequency.setValueAtTime(50, t + 0.85);
+    const heartGain3 = audioCtx.createGain();
+    heartGain3.gain.setValueAtTime(0.15, t + 0.85);
+    heartGain3.gain.exponentialRampToValueAtTime(0.01, t + 0.95);
+    heartbeat3.connect(heartGain3);
+    heartGain3.connect(audioCtx.destination);
+
+    // 5. 衣服摩擦聲
+    const rustle = audioCtx.createOscillator();
+    rustle.type = 'triangle';
+    rustle.frequency.setValueAtTime(300, t + 0.1);
+    rustle.frequency.exponentialRampToValueAtTime(150, t + 0.4);
+    const rustleGain = audioCtx.createGain();
+    rustleGain.gain.setValueAtTime(0.08, t + 0.1);
+    rustleGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    rustle.connect(rustleGain);
+    rustleGain.connect(audioCtx.destination);
+
+    fall.start(t);
+    fall.stop(t + 0.3);
+    cough.start(t + 0.15);
+    cough.stop(t + 0.4);
+    lastBreath.start(t + 0.3);
+    lastBreath.stop(t + 1.0);
+    heartbeat1.start(t + 0.4);
+    heartbeat1.stop(t + 0.5);
+    heartbeat2.start(t + 0.6);
+    heartbeat2.stop(t + 0.7);
+    heartbeat3.start(t + 0.85);
+    heartbeat3.stop(t + 0.95);
+    rustle.start(t + 0.1);
+    rustle.stop(t + 0.5);
+}
+
+// 怪物死亡音效 - 惡慘的尖叫聲
+function playEnemyDeathSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 尖叫聲
+    const scream = audioCtx.createOscillator();
+    scream.type = 'sawtooth';
+    scream.frequency.setValueAtTime(800, t);
+    scream.frequency.exponentialRampToValueAtTime(200, t + 0.4);
+    const screamGain = audioCtx.createGain();
+    screamGain.gain.setValueAtTime(0.3, t);
+    screamGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    scream.connect(screamGain);
+    screamGain.connect(audioCtx.destination);
+
+    // 2. 肉體撕裂聲
+    const rip = audioCtx.createOscillator();
+    rip.type = 'square';
+    rip.frequency.setValueAtTime(400, t + 0.1);
+    rip.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+    const ripGain = audioCtx.createGain();
+    ripGain.gain.setValueAtTime(0.2, t + 0.1);
+    ripGain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+    rip.connect(ripGain);
+    ripGain.connect(audioCtx.destination);
+
+    // 3. 倒地聲
+    const collapse = audioCtx.createOscillator();
+    collapse.type = 'sine';
+    collapse.frequency.setValueAtTime(150, t + 0.3);
+    collapse.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+    const collapseGain = audioCtx.createGain();
+    collapseGain.gain.setValueAtTime(0.25, t + 0.3);
+    collapseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+    collapse.connect(collapseGain);
+    collapseGain.connect(audioCtx.destination);
+
+    scream.start(t);
+    scream.stop(t + 0.5);
+    rip.start(t + 0.1);
+    rip.stop(t + 0.35);
+    collapse.start(t + 0.3);
+    collapse.stop(t + 0.6);
+}
+
+// 手榴彈投擲音效
+function playGrenadeThrowSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 投擲聲
+    const throwSound = audioCtx.createOscillator();
+    throwSound.type = 'sine';
+    throwSound.frequency.setValueAtTime(300, t);
+    throwSound.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+    const throwGain = audioCtx.createGain();
+    throwGain.gain.setValueAtTime(0.2, t);
+    throwGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    throwSound.connect(throwGain);
+    throwGain.connect(audioCtx.destination);
+
+    // 2. 空氣聲
+    const whoosh = audioCtx.createOscillator();
+    whoosh.type = 'triangle';
+    whoosh.frequency.setValueAtTime(200, t);
+    whoosh.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+    const whooshGain = audioCtx.createGain();
+    whooshGain.gain.setValueAtTime(0.15, t);
+    whooshGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    whoosh.connect(whooshGain);
+    whooshGain.connect(audioCtx.destination);
+
+    throwSound.start(t);
+    throwSound.stop(t + 0.2);
+    whoosh.start(t);
+    whoosh.stop(t + 0.15);
+}
+
+// 手榴彈爆炸音效
+function playGrenadeExplosionSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 主要爆炸噪聲
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.8, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    noise.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+
+    // 2. 低頻重擊
+    const boom = audioCtx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(80, t);
+    boom.frequency.exponentialRampToValueAtTime(20, t + 0.4);
+    const boomGain = audioCtx.createGain();
+    boomGain.gain.setValueAtTime(0.9, t);
+    boomGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+    boom.connect(boomGain);
+    boomGain.connect(audioCtx.destination);
+
+    // 3. 高頻碎裂聲
+    const crackle = audioCtx.createOscillator();
+    crackle.type = 'sawtooth';
+    crackle.frequency.setValueAtTime(600, t);
+    crackle.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+    const crackleGain = audioCtx.createGain();
+    crackleGain.gain.setValueAtTime(0.3, t);
+    crackleGain.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+    crackle.connect(crackleGain);
+    crackleGain.connect(audioCtx.destination);
+
+    noise.start(t);
+    noise.stop(t + 0.5);
+    boom.start(t);
+    boom.stop(t + 0.6);
+    crackle.start(t);
+    crackle.stop(t + 0.35);
+}
+
+// 換武器音效
+function playWeaponSwitchSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 金屬滑動聲
+    const slide = audioCtx.createOscillator();
+    slide.type = 'sawtooth';
+    slide.frequency.setValueAtTime(400, t);
+    slide.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+    const slideGain = audioCtx.createGain();
+    slideGain.gain.setValueAtTime(0.15, t);
+    slideGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    slide.connect(slideGain);
+    slideGain.connect(audioCtx.destination);
+
+    // 2. 卡扣聲
+    const click = audioCtx.createOscillator();
+    click.type = 'square';
+    click.frequency.setValueAtTime(800, t + 0.1);
+    click.frequency.exponentialRampToValueAtTime(400, t + 0.05);
+    const clickGain = audioCtx.createGain();
+    clickGain.gain.setValueAtTime(0.1, t + 0.1);
+    clickGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    click.connect(clickGain);
+    clickGain.connect(audioCtx.destination);
+
+    slide.start(t);
+    slide.stop(t + 0.2);
+    click.start(t + 0.1);
+    click.stop(t + 0.15);
+}
+
+// 過關音效 - 勝利音效
+function playLevelCompleteSound() {
+    const t = audioCtx.currentTime;
+
+    // 1. 勝利和弦
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + i * 0.1);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0, t + i * 0.1);
+        gain.gain.linearRampToValueAtTime(0.2, t + i * 0.1 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + i * 0.1);
+        osc.stop(t + i * 0.1 + 0.5);
+    });
+
+    // 2. 閃爍音效
+    const sparkle = audioCtx.createOscillator();
+    sparkle.type = 'triangle';
+    sparkle.frequency.setValueAtTime(1200, t);
+    sparkle.frequency.exponentialRampToValueAtTime(2000, t + 0.3);
+    const sparkleGain = audioCtx.createGain();
+    sparkleGain.gain.setValueAtTime(0.1, t);
+    sparkleGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+    sparkle.connect(sparkleGain);
+    sparkleGain.connect(audioCtx.destination);
+    sparkle.start(t);
+    sparkle.stop(t + 0.3);
 }
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -203,22 +787,26 @@ const WORLD = { width: 3200, height: 2400 };
 
 let startPos = { x: 400, y: 350 }; // 初始第一關的地點
 let level = 1;
-let player = { x: 0, y: 0, size: 18, speed: 4.8, hp: 100, angle: 0, shotTimer: 0, muzzleFlash: 0, hitFlash: 0, shake: 0 };
-const SHOT_COOLDOWN = 85; 
+let player = { x: 0, y: 0, size: 18, speed: 4.8, hp: 100, angle: 0, shotTimer: 0, muzzleFlash: 0, hitFlash: 0, shake: 0, grenadeCooldown: 0, isDead: false };
+const SHOT_COOLDOWN = 85;
+const GRENADE_COOLDOWN = 180; // 手榴彈冷卻時間（幀數，約3秒） 
 const BASE_SHOT_RANGE = 260; // 稍微增加一點射程感
 const PELLET_COUNT = 6;
 
 let mousePos = { x: 0, y: 0 };
 let camera = { x: 0, y: 0 };
+let isMDown = false; // 全局鼠標按下狀態
 let enemies = [];
 let walls = [];
-let particles = []; 
+let particles = [];
 let decals = []; // 用於存放永久裝飾物（如血跡）
 let shells = [];
 let tracers = [];
 let collectibles = [];
+let healthItems = []; // 回血道具數組
 let exitPoint = null, exitTempPoint = null;
 let keys = {};
+let grenades = []; // 手榴彈數組
 
 let radarTimer = 0, radarCircleRadius = 0;
 let lastRadarSnapshot = { enemies: [], collectibles: [], exit: null };
@@ -275,12 +863,214 @@ function getRandomEmptyPos(padding = 50) {
     return { x, y };
 }
 
+// --- 手榴彈系統 ---
+function throwGrenade() {
+    // 檢查冷卻
+    if (player.grenadeCooldown > 0) return;
+
+    const fuseTime = 120; // 引信時間（幀數）
+
+    // 設置冷卻
+    player.grenadeCooldown = GRENADE_COOLDOWN;
+
+    // 計算鼠標在世界坐標中的位置
+    const targetX = mousePos.x + camera.x;
+    const targetY = mousePos.y + camera.y;
+
+    // 計算從玩家到鼠標的方向和距離
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+    const distance = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+
+    // 計算投擲速度（確保能到達目標）
+    const throwSpeed = Math.min(distance / 40, 6); // 限制最大速度，大幅減少投擲距離
+    const vx = Math.cos(angle) * throwSpeed;
+    const vy = Math.sin(angle) * throwSpeed;
+
+    // 創建手榴彈對象
+    grenades.push({
+        x: player.x,
+        y: player.y,
+        vx: vx,
+        vy: vy,
+        fuseTimer: fuseTime,
+        active: true,
+        targetX: targetX,
+        targetY: targetY
+    });
+
+    // 播放投擲音效
+    playSound('grenade_throw');
+
+    // 視覺效果：投擲粒子
+    for (let i = 0; i < 5; i++) {
+        particles.push(new Particle(
+            player.x,
+            player.y,
+            Math.cos(angle + (Math.random() - 0.5) * 0.5) * 3,
+            Math.sin(angle + (Math.random() - 0.5) * 0.5) * 3,
+            15,
+            3,
+            '#ff6600'
+        ));
+    }
+}
+
+function updateGrenades() {
+    for (let i = grenades.length - 1; i >= 0; i--) {
+        const g = grenades[i];
+
+        if (!g.active) {
+            grenades.splice(i, 1);
+            continue;
+        }
+
+        // 移動手榴彈
+        g.x += g.vx;
+        g.y += g.vy;
+
+        // 摩擦力
+        g.vx *= 0.98;
+        g.vy *= 0.98;
+
+        // 牆壁碰撞
+        if (isInsideWall(g.x, g.y, 5)) {
+            g.vx *= -0.5;
+            g.vy *= -0.5;
+            // 推出牆壁
+            g.x += g.vx * 2;
+            g.y += g.vy * 2;
+        }
+
+        // 引信倒數
+        g.fuseTimer--;
+
+        // 爆炸
+        if (g.fuseTimer <= 0) {
+            explodeGrenade(g);
+            g.active = false;
+        }
+    }
+}
+
+function explodeGrenade(grenade) {
+    const explosionRadius = 150; // 爆炸半徑
+    const explosionDamage = 80; // 爆炸傷害
+
+    // 播放爆炸音效
+    playSound('grenade_explosion');
+
+    // 視覺效果：爆炸粒子
+    for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 5 + Math.random() * 10;
+        particles.push(new Particle(
+            grenade.x,
+            grenade.y,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed,
+            40 + Math.random() * 20,
+            8 + Math.random() * 8,
+            '#ff4400',
+            0.9
+        ));
+    }
+
+    // 爆炸煙霧
+    for (let i = 0; i < 15; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        particles.push(new Particle(
+            grenade.x,
+            grenade.y,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed,
+            60 + Math.random() * 30,
+            15 + Math.random() * 10,
+            '#333',
+            0.95
+        ));
+    }
+
+    // 爆炸火光
+    for (let i = 0; i < 20; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 8 + Math.random() * 12;
+        particles.push(new Particle(
+            grenade.x,
+            grenade.y,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed,
+            20 + Math.random() * 10,
+            6 + Math.random() * 4,
+            '#ffff00',
+            0.85
+        ));
+    }
+
+    // 對敵人造成傷害
+    enemies.forEach(en => {
+        const dist = Math.hypot(en.x - grenade.x, en.y - grenade.y);
+        if (dist < explosionRadius) {
+            // 距離越近傷害越高
+            const damageMultiplier = 1 - (dist / explosionRadius);
+            const actualDamage = explosionDamage * damageMultiplier;
+            en.hp -= actualDamage;
+
+            // 擊退效果
+            const knockbackAngle = Math.atan2(en.y - grenade.y, en.x - grenade.x);
+            const knockbackForce = 20 * damageMultiplier;
+            en.kX = Math.cos(knockbackAngle) * knockbackForce;
+            en.kY = Math.sin(knockbackAngle) * knockbackForce;
+
+            // 擊中粒子效果
+            for (let j = 0; j < 8; j++) {
+                particles.push(new Particle(
+                    en.x,
+                    en.y,
+                    Math.cos(knockbackAngle + (Math.random() - 0.5) * 2) * 6,
+                    Math.sin(knockbackAngle + (Math.random() - 0.5) * 2) * 6,
+                    25,
+                    4,
+                    '#ff0000'
+                ));
+            }
+        }
+    });
+
+    // 對玩家造成傷害（如果在爆炸範圍內）
+    const playerDist = Math.hypot(player.x - grenade.x, player.y - grenade.y);
+    if (playerDist < explosionRadius) {
+        const damageMultiplier = 1 - (playerDist / explosionRadius);
+        const actualDamage = explosionDamage * damageMultiplier * 0.5; // 玩家受到一半傷害
+        player.hp -= actualDamage;
+        player.shake = 30;
+        player.hitFlash = 20;
+        updateUI();
+    }
+
+    // 在地板留下爆炸痕跡
+    for (let i = 0; i < 8; i++) {
+        decals.push({
+            x: grenade.x + (Math.random() - 0.5) * 60,
+            y: grenade.y + (Math.random() - 0.5) * 60,
+            size: 8 + Math.random() * 12,
+            color: '#200',
+            alpha: 0.4 + Math.random() * 0.3
+        });
+    }
+
+    // 屏幕震動
+    player.shake = 25;
+}
+
 // --- 強化後的散彈槍特效邏輯 ---
 function fireShotgun() {
     if (player.shotTimer <= 0) {
         player.shotTimer = SHOT_COOLDOWN;
-        player.shake = 18; 
-        playSound('shot');
+        player.shake = 18;
+        playSound('shot', player.wepType || 2); // 使用武器類型參數
         player.muzzleFlash = 10;
 
         // --- 新增：玩家後座力 ---
@@ -356,7 +1146,20 @@ if (Math.random() > 0.4) {
 }
 
 // --- 修改後的死亡邏輯 ---
-if (en.hp <= 0) { 
+if (en.hp <= 0) {
+    // 播放怪物死亡音效
+    playSound('enemy_death');
+
+    // 10%機率掉落回血道具
+    if (Math.random() < 0.10) {
+        healthItems.push({
+            x: en.x,
+            y: en.y,
+            collected: false,
+            visibleTimer: 0
+        });
+    }
+
     // 敵人死亡時，在地板留下大片血泊
     for(let i=0; i<12; i++) {
         decals.push({
@@ -386,13 +1189,16 @@ if (en.hp <= 0) {
 function initLevel() {
     decals = []; // [新增] 清空上一層的血跡
     if (level > 1) player.hp = Math.min(100, player.hp + 20);
+    player.grenadeCooldown = 0; // 重置手榴彈冷卻
+    player.isDead = false; // 重置死亡標誌
     generateStaticMap();
-    player.x = startPos.x; 
+    player.x = startPos.x;
     player.y = startPos.y;
     collectibles = [];
-    for(let i=0; i<3; i++) { 
-        let pos = getRandomEmptyPos(40); 
-        collectibles.push({x: pos.x, y: pos.y, collected: false, visibleTimer: 0}); 
+    healthItems = []; // 清空回血道具
+    for(let i=0; i<3; i++) {
+        let pos = getRandomEmptyPos(40);
+        collectibles.push({x: pos.x, y: pos.y, collected: false, visibleTimer: 0});
     }
     let ePos = getRandomEmptyPos(100);
     exitTempPoint = { x: ePos.x, y: ePos.y, visibleTimer: 0 };
@@ -403,10 +1209,10 @@ function initLevel() {
         let pos = getRandomEmptyPos(40);
         if (Math.hypot(pos.x - player.x, pos.y - player.y) < 600) continue;
         let type = Math.random();
-        let en = (type < 0.15 && level > 1) ? 
-            { x: pos.x, y: pos.y, hp: 170, maxHp: 170, speed: 0.8, size: 28, color: '#300', eye: '#ff00ff', kbResist: 0.1, biteDmg: 40 } :
-            (type < 0.45 ? { x: pos.x, y: pos.y, hp: 25, maxHp: 25, speed: 2.2, size: 14, color: '#220', eye: '#ffff00', kbResist: 1.4, biteDmg: 10 } :
-            { x: pos.x, y: pos.y, hp: 55, maxHp: 55, speed: 1.5, size: 22, color: '#111', eye: '#ff0000', kbResist: 0.7, biteDmg: 18 });
+        let en = (type < 0.15 && level > 1) ?
+            { x: pos.x, y: pos.y, hp: 170, maxHp: 170, speed: 0.8, size: 28, color: '#300', eye: '#ff00ff', kbResist: 0.1, biteDmg: 40, type: 3 } :
+            (type < 0.45 ? { x: pos.x, y: pos.y, hp: 25, maxHp: 25, speed: 2.2, size: 14, color: '#220', eye: '#ffff00', kbResist: 1.4, biteDmg: 10, type: 1 } :
+            { x: pos.x, y: pos.y, hp: 55, maxHp: 55, speed: 1.5, size: 22, color: '#111', eye: '#ff0000', kbResist: 0.7, biteDmg: 18, type: 2 });
         en.kX = 0; en.kY = 0; en.biteTimer = 0; en.angle = 0; en.targetX = player.x; en.targetY = player.y; en.pathUpdate = Math.random()*60;
         enemies.push(en);
     }
@@ -423,17 +1229,83 @@ function initLevel() {
 }
 
 function update() {
-    if (player.hp <= 0) { alert("你已經被深淵吞噬，請重新挑戰！"); location.reload(); return; }
+    if (player.hp <= 0 && !player.isDead) {
+        player.isDead = true;
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        playSound('player_death');
+        setTimeout(() => {
+            // 顯示死亡UI
+            const deathMenu = document.getElementById('death-menu');
+            const deathLevel = document.getElementById('death-level');
+            if (deathMenu) {
+                deathMenu.style.display = 'flex';
+                if (deathLevel) {
+                    deathLevel.textContent = level;
+                }
+            }
+        }, 1200);
+        return;
+    }
+    if (player.isDead) return; // 如果已死亡，直接返回
     let dx = 0, dy = 0;
     if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
-    if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
-    if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
+
+    // 檢查與怪物的碰撞
+    let canMoveX = true;
+    let canMoveY = true;
+    enemies.forEach(en => {
+        let distX = Math.abs((player.x + dx) - en.x);
+        let distY = Math.abs(player.y - en.y);
+        let minDist = player.size + en.size;
+        if (distX < minDist && distY < minDist) {
+            canMoveX = false;
+        }
+        distX = Math.abs(player.x - en.x);
+        distY = Math.abs((player.y + dy) - en.y);
+        if (distX < minDist && distY < minDist) {
+            canMoveY = false;
+        }
+    });
+
+    if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size) && canMoveX) player.x += dx;
+    if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size) && canMoveY) player.y += dy;
     player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
-    if (player.shotTimer > 0) player.shotTimer--;
+    // 保持向後兼容：如果沒有獨立計時器，使用原本的shotTimer
+    if (player.weaponTimers) {
+        // 新的獨立計時器系統由weaponSystemUpdate處理
+    } else if (player.shotTimer > 0) {
+        player.shotTimer--;
+        document.getElementById('reload-fill').style.width = ((SHOT_COOLDOWN - player.shotTimer) / SHOT_COOLDOWN * 100) + "%";
+    }
     if (player.muzzleFlash > 0) player.muzzleFlash--;
 
-    document.getElementById('reload-fill').style.width = ((SHOT_COOLDOWN - player.shotTimer) / SHOT_COOLDOWN * 100) + "%";
+    // 更新手榴彈冷卻
+    if (player.grenadeCooldown > 0) player.grenadeCooldown--;
+
+    // 直接更新手榴彈冷卻條
+    const grenadeFill = document.getElementById('grenade-fill');
+    if (grenadeFill) {
+        const progress = Math.max(0, ((GRENADE_COOLDOWN - player.grenadeCooldown) / GRENADE_COOLDOWN * 100));
+        grenadeFill.style.width = progress + "%";
+        if (player.grenadeCooldown > 0) {
+            grenadeFill.style.background = "#666";
+        } else {
+            grenadeFill.style.background = "#ff6600";
+        }
+    }
+
+    // 確保cursor保持為crosshair
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas && canvas.style.cursor !== 'crosshair') {
+        canvas.style.cursor = 'crosshair';
+    }
+
+    // 更新手榴彈
+    updateGrenades();
+
     camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
     camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
 
@@ -471,45 +1343,89 @@ function update() {
     shells.forEach((s, i) => { s.vx *= 0.9; s.vy *= 0.9; s.x += s.vx; s.y += s.vy; s.angle += s.rot; s.life--; if(s.life <= 0) shells.splice(i, 1); });
 
 collectibles.forEach(c => {
-    if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) { 
-        c.collected = true; 
-        
-        // --- [新增：隨機回血邏輯] ---
-        // 設定回血範圍，例如 10 到 25 點 HP
-        let healAmount = Math.floor(Math.random() * 16) + 10; 
+    if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 40) {
+        c.collected = true;
+
+        // 儀式收集物回血邏輯
+        let healAmount = Math.floor(Math.random() * 16) + 10;
         player.hp = Math.min(100, player.hp + healAmount);
-        
+
         // 視覺回饋：受傷紅光是紅色，回血可以用綠色閃爍
         player.hitFlash = 10; // 借用閃爍機制，但我們可以改顏色或直接加一個特效
-        
+
         // 浮動文字特效 (選配)：讓玩家知道回了多少血
         for(let i=0; i<5; i++) {
             particles.push(new Particle(
-                player.x, player.y, 
-                (Math.random()-0.5)*4, (Math.random()-0.5)*4, 
+                player.x, player.y,
+                (Math.random()-0.5)*4, (Math.random()-0.5)*4,
                 30, 4, '#00ffaa' // 綠色粒子
             ));
         }
         // --------------------------
 
-        updateUI(); 
+        updateUI();
         playSound('pickup');
         if(collectibles.every(it => it.collected)) {
             exitPoint = { x: exitTempPoint.x, y: exitTempPoint.y };
         }
     }
     });
+
+// 回血道具拾取邏輯
+healthItems.forEach(h => {
+    if(!h.collected && Math.hypot(player.x - h.x, player.y - h.y) < 40) {
+        h.collected = true;
+
+        // 回復20%血量
+        let healAmount = 20;
+        player.hp = Math.min(100, player.hp + healAmount);
+
+        // 視覺回饋
+        player.hitFlash = 10;
+
+        // 浮動文字特效
+        for(let i=0; i<5; i++) {
+            particles.push(new Particle(
+                player.x, player.y,
+                (Math.random()-0.5)*4, (Math.random()-0.5)*4,
+                30, 4, '#ff0000' // 紅色粒子區分回血道具
+            ));
+        }
+
+        updateUI();
+        playSound('pickup');
+    }
+    });
+
+// 清理已收集的healthItems
+healthItems = healthItems.filter(h => !h.collected);
     if (exitPoint && Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 50) { 
     // --- 修改這裡：在跳下一關前，先把目前的出口座標存成下一關的起點 ---
     startPos = { x: exitPoint.x, y: exitPoint.y };
     // ------------------------------------------------------------
     
-    level++; 
-    initLevel(); 
+    level++;
+    playSound('level_complete'); // 播放過關音效
+    initLevel();
 }
 
     enemies.forEach((en, idx) => {
-        if (en.hp <= 0) { enemies.splice(idx, 1); return; }
+        if (en.hp <= 0) {
+            playSound('enemy_death'); // 播放怪物死亡音效
+
+            // 5%機率掉落回血道具
+            if (Math.random() < 0.05) {
+                healthItems.push({
+                    x: en.x,
+                    y: en.y,
+                    collected: false,
+                    visibleTimer: 0
+                });
+            }
+
+            enemies.splice(idx, 1);
+            return;
+        }
         en.pathUpdate--;
         if (en.pathUpdate <= 0) {
             en.pathUpdate = 30;
@@ -525,27 +1441,44 @@ collectibles.forEach(c => {
             let vx = Math.cos(moveAng) * en.speed, vy = Math.sin(moveAng) * en.speed;
             if (!isInsideWall(en.x + vx, en.y, en.size)) en.x += vx;
             if (!isInsideWall(en.x, en.y + vy, en.size)) en.y += vy;
-        } else if (en.biteTimer <= 0) { player.hp -= en.biteDmg; playSound('hit'); player.hitFlash = 15; player.shake = 30; en.biteTimer = 60;     for(let i = 0; i < 5; i++) {
-        decals.push({
-            // 讓血跡出現在玩家周圍
-            x: player.x + (Math.random() - 0.5) * 30,
-            y: player.y + (Math.random() - 0.5) * 30,
-            
-            // 玩家的血可以稍微大一點點，增加受傷感
-            size: 2 + Math.random() * 5,
-            
-            // 鮮紅色
-            color: '#800', 
-            alpha: 0.6
-        });
-    }
+        } else if (en.biteTimer <= 0) {
+            player.hp -= en.biteDmg;
+            playSound('hit');
+            player.hitFlash = 15;
+            player.shake = 30;
+            en.biteTimer = 60;
+            for(let i = 0; i < 5; i++) {
+                decals.push({
+                    // 讓血跡出現在玩家周圍
+                    x: player.x + (Math.random() - 0.5) * 30,
+                    y: player.y + (Math.random() - 0.5) * 30,
+
+                    // 玩家的血可以稍微大一點點，增加受傷感
+                    size: 2 + Math.random() * 5,
+
+                    // 鮮紅色
+                    color: '#800',
+                    alpha: 0.6
+                });
+            }
+        }
     // ------------------------------------
 
-    updateUI();  }
-        if (Math.abs(en.kX) > 0.1) { if (!isInsideWall(en.x + en.kX, en.y, en.size)) en.x += en.kX; en.kX *= 0.8; }
-        if (Math.abs(en.kY) > 0.1) { if (!isInsideWall(en.x, en.y + en.kY, en.size)) en.y += en.kY; en.kY *= 0.8; }
-        if (en.biteTimer > 0) en.biteTimer--;
+    if (Math.abs(en.kX) > 0.1) { if (!isInsideWall(en.x + en.kX, en.y, en.size)) en.x += en.kX; en.kX *= 0.8; }
+    if (Math.abs(en.kY) > 0.1) { if (!isInsideWall(en.x, en.y + en.kY, en.size)) en.y += en.kY; en.kY *= 0.8; }
+    if (en.biteTimer > 0) en.biteTimer--;
     });
+    
+    // --- 调用所有补丁的 update 逻辑 ---
+    if (typeof window.weaponSystemUpdate === 'function') window.weaponSystemUpdate();
+    if (typeof window.timerUpdate === 'function') window.timerUpdate();
+    if (typeof window.dodgeUpdate === 'function') window.dodgeUpdate();
+    if (typeof window.horrorEffectsUpdate === 'function') window.horrorEffectsUpdate();
+    if (typeof window.advancedHorrorUpdate === 'function') window.advancedHorrorUpdate();
+    if (typeof window.visceralHorrorUpdate === 'function') window.visceralHorrorUpdate();
+
+    // 更新UI
+    updateUI();
 }
 
 function draw() {
@@ -555,9 +1488,71 @@ function draw() {
     ctx.translate(-camera.x, -camera.y);
 
     // --- [新增] 繪製牆壁 ---
-    walls.forEach(w => { 
-        ctx.fillStyle = '#1a0505'; ctx.fillRect(w.x, w.y, w.w, w.h); 
-        ctx.strokeStyle = '#4a1111'; ctx.lineWidth = 2; ctx.strokeRect(w.x, w.y, w.w, w.h); 
+    walls.forEach(w => {
+        // 主體顏色
+        ctx.fillStyle = '#1a0505';
+        ctx.fillRect(w.x, w.y, w.w, w.h);
+
+        // 添加紋理效果（更多噪點）
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 50; i++) {
+            let nx = w.x + Math.random() * w.w;
+            let ny = w.y + Math.random() * w.h;
+            let size = 1 + Math.random() * 3;
+            ctx.fillStyle = Math.random() > 0.5 ? '#2a1515' : '#0a0000';
+            ctx.fillRect(nx, ny, size, size);
+        }
+        ctx.restore();
+
+        // 添加裂縫效果
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = '#0a0000';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+            let cx = w.x + Math.random() * w.w;
+            let cy = w.y + Math.random() * w.h;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + (Math.random() - 0.5) * 20, cy + (Math.random() - 0.5) * 20);
+            ctx.lineTo(cx + (Math.random() - 0.5) * 30, cy + (Math.random() - 0.5) * 30);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 添加污漬效果
+        ctx.save();
+        ctx.globalAlpha = 0.2;
+        for (let i = 0; i < 5; i++) {
+            let sx = w.x + Math.random() * w.w;
+            let sy = w.y + Math.random() * w.h;
+            ctx.fillStyle = '#300000';
+            ctx.beginPath();
+            ctx.arc(sx, sy, 5 + Math.random() * 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // 邊緣高光（左上）
+        ctx.fillStyle = 'rgba(80, 30, 30, 0.5)';
+        ctx.fillRect(w.x, w.y, w.w, 4);
+        ctx.fillRect(w.x, w.y, 4, w.h);
+
+        // 陰影（右下）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(w.x + w.w - 4, w.y, 4, w.h);
+        ctx.fillRect(w.x, w.y + w.h - 4, w.w, 4);
+
+        // 內角陰影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(w.x, w.y + w.h - 8, 8, 8);
+        ctx.fillRect(w.x + w.w - 8, w.y, 8, 8);
+
+        // 邊框
+        ctx.strokeStyle = '#4a1111';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(w.x, w.y, w.w, w.h);
     });
 
     // --- [新增] 繪製地面裝飾 (血跡層) ---
@@ -577,7 +1572,7 @@ collectibles.forEach(c => {
     if (!c.collected) {
         ctx.save();
         ctx.translate(c.x, c.y); // 將畫布中心移到收集物位置
-        
+
         // --- 優化點 A：穩定的旋轉動畫 ---
         // 使用 Date.now() 的毫秒數，除以一個較大的數值 (例如 2000)，
         // 產生一個緩慢、持續累加的角度。
@@ -627,6 +1622,76 @@ collectibles.forEach(c => {
         ctx.restore(); // 恢復畫布狀態
     }
 });
+
+// --- 繪製回血道具 ---
+healthItems.forEach(h => {
+    if (!h.collected) {
+        ctx.save();
+        ctx.translate(h.x, h.y);
+
+        // 閃爍效果
+        let blink = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+
+        // 繪製紅色十字
+        ctx.fillStyle = `rgba(255, 0, 0, ${blink})`;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${blink})`;
+        ctx.lineWidth = 2;
+
+        // 橫向
+        ctx.fillRect(-8, -3, 16, 6);
+        // 縱向
+        ctx.fillRect(-3, -8, 6, 16);
+        // 外框
+        ctx.strokeRect(-8, -3, 16, 6);
+        ctx.strokeRect(-3, -8, 6, 16);
+
+        ctx.restore();
+    }
+});
+
+// --- 繪製手榴彈 ---
+grenades.forEach(g => {
+    if (!g.active) return;
+
+    ctx.save();
+    ctx.translate(g.x, g.y);
+
+    // 根據引信時間閃爍
+    const blinkSpeed = Math.max(0.1, g.fuseTimer / 60);
+    const blink = Math.sin(Date.now() / (blinkSpeed * 100)) * 0.5 + 0.5;
+
+    // 手榴彈本體
+    ctx.fillStyle = '#2a2a2a';
+    ctx.beginPath();
+    ctx.arc(0, 0, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 引信閃光
+    ctx.fillStyle = `rgba(255, ${100 + blink * 155}, 0, ${blink})`;
+    ctx.beginPath();
+    ctx.arc(0, -4, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 引信火花
+    if (g.fuseTimer < 30) {
+        for (let i = 0; i < 3; i++) {
+            const sparkAngle = Math.random() * Math.PI * 2;
+            const sparkDist = 8 + Math.random() * 4;
+            ctx.fillStyle = '#ff6600';
+            ctx.beginPath();
+            ctx.arc(
+                Math.cos(sparkAngle) * sparkDist,
+                Math.sin(sparkAngle) * sparkDist,
+                1 + Math.random(),
+                0, Math.PI * 2
+            );
+            ctx.fill();
+        }
+    }
+
+    ctx.restore();
+});
+
     // --- 進階手電筒：光線投射 (Raycasting) 版本 ---
     ctx.save();
     ctx.translate(player.x, player.y);
@@ -634,30 +1699,31 @@ collectibles.forEach(c => {
     ctx.globalCompositeOperation = 'lighter';
 
     let beamRange = 300;   // 射程
-    let beamAngle = 0.3;   // 角度範圍
-    let rayCount = 40;     // 光線數量 (越多越精細，但耗效能，40-60 效果最佳)
+    let beamAngle = 0.4;   // 角度範圍
+    let rayCount = 40;     // 光線數量
 
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-
-    // 從 -beamAngle 掃描到 +beamAngle
+    // 收集所有光線的終點
+    let points = [];
     for (let i = 0; i <= rayCount; i++) {
         let currentAngle = -beamAngle + (i / rayCount) * (beamAngle * 2);
-        
+
+        // 計算角度比率（0在中心，1在邊緣）
+        let angleRatio = Math.abs(currentAngle) / beamAngle;
+
+        // 根據角度比率計算透明度（中心最亮，邊緣最暗）
+        let angleAlpha = 1 - Math.pow(angleRatio, 2);
+
         // 這條光線在世界座標中的實際角度
         let worldAngle = player.angle + currentAngle;
-        let rayX = player.x;
-        let rayY = player.y;
         let finalDist = beamRange;
 
         // --- 核心：光線步進法 (Raymarching) 偵測牆壁 ---
-        // 每隔一段距離檢查一次是否撞牆
-        let step = 15; // 步進距離，越小越精準
+        let step = 15;
         for (let d = step; d <= beamRange; d += step) {
             let checkX = player.x + Math.cos(worldAngle) * d;
             let checkY = player.y + Math.sin(worldAngle) * d;
-            
-            if (isInsideWall(checkX, checkY, 2)) { // 偵測是否撞牆
+
+            if (isInsideWall(checkX, checkY, 2)) {
                 finalDist = d;
                 break;
             }
@@ -666,21 +1732,32 @@ collectibles.forEach(c => {
         // 計算在 local 座標系中的點
         let lx = Math.cos(currentAngle) * finalDist;
         let ly = Math.sin(currentAngle) * finalDist;
-        ctx.lineTo(lx, ly);
+        points.push({ x: lx, y: ly, alpha: angleAlpha });
     }
 
-    ctx.lineTo(0, 0);
-    ctx.closePath();
+    // 繪製光束（使用多個三角形）
+    for (let i = 0; i < points.length - 1; i++) {
+        let p1 = points[i];
+        let p2 = points[i + 1];
 
-    // 建立漸變填色
-    let beamGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, beamRange);
-    beamGrad.addColorStop(0, 'rgba(255, 255, 220, 0.4)');
-    beamGrad.addColorStop(1, 'rgba(255, 255, 220, 0)');
-    
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = 'rgba(255, 255, 200, 0.3)';
-    ctx.fillStyle = beamGrad;
-    ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.closePath();
+
+        // 使用兩點的平均透明度
+        let avgAlpha = (p1.alpha + p2.alpha) / 2;
+
+        // 建立漸變
+        let grad = ctx.createRadialGradient(0, 0, 10, 0, 0, beamRange);
+        grad.addColorStop(0, `rgba(255, 255, 220, ${0.5 * avgAlpha})`);
+        grad.addColorStop(0.5, `rgba(255, 255, 220, ${0.3 * avgAlpha})`);
+        grad.addColorStop(1, `rgba(255, 255, 220, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
 
     ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
@@ -696,8 +1773,27 @@ collectibles.forEach(c => {
 ctx.fillStyle = '#daa520'; ctx.fillRect(-1, -2, 2, 4); ctx.restore(); });
 
     tracers.forEach((t, i) => {
-        ctx.strokeStyle = `rgba(255, 255, 220, ${t.life/12})`; ctx.lineWidth = t.life/3;
-        ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x+Math.cos(t.angle)*t.len, t.y+Math.sin(t.angle)*t.len); ctx.stroke();
+        // 增強軌跡視覺效果
+        let alphaIntensity = t.life / 12;
+        
+        // 主光線
+        ctx.strokeStyle = `rgba(255, 255, 220, ${alphaIntensity})`; 
+        ctx.lineWidth = Math.max(1.5, t.life/3);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath(); 
+        ctx.moveTo(t.x, t.y); 
+        ctx.lineTo(t.x+Math.cos(t.angle)*t.len, t.y+Math.sin(t.angle)*t.len); 
+        ctx.stroke();
+        
+        // 加強光暈
+        ctx.strokeStyle = `rgba(255, 200, 100, ${alphaIntensity * 0.6})`; 
+        ctx.lineWidth = t.life/2;
+        ctx.beginPath(); 
+        ctx.moveTo(t.x, t.y); 
+        ctx.lineTo(t.x+Math.cos(t.angle)*t.len, t.y+Math.sin(t.angle)*t.len); 
+        ctx.stroke();
+        
         t.life--; if(t.life<=0) tracers.splice(i,1);
     });
 
@@ -706,26 +1802,78 @@ ctx.fillStyle = '#daa520'; ctx.fillRect(-1, -2, 2, 4); ctx.restore(); });
 enemies.forEach(en => {
     // 增加一個「抽搐計時器」
     en.twitchTimer = (en.twitchTimer || 0) - 1;
-    
+
     let currentSpeed = en.speed;
-    
+
     if (en.twitchTimer <= 0) {
         // 隨機爆發速度或突然停頓
-        en.speedMult = Math.random() > 0.8 ? 2.5 : 0.4; 
+        en.speedMult = Math.random() > 0.8 ? 2.5 : 0.4;
         en.twitchTimer = 10 + Math.random() * 20;
     }
-    
+
     let moveAng = Math.atan2(en.targetY - en.y, en.targetX - en.x);
     let vx = Math.cos(moveAng) * (en.speed * (en.speedMult || 1));
     let vy = Math.sin(moveAng) * (en.speed * (en.speedMult || 1));
-    
+
 // --- 僅修改抖動邏輯 ---
 let sx = (Math.random() - 0.5) * 2; // 計算 X 軸抖動量
 let sy = (Math.random() - 0.5) * 2; // 計算 Y 軸抖動量
 
-// 移動前先檢查牆壁
-if (!isInsideWall(en.x + vx + sx, en.y, en.size)) en.x += vx + sx;
-if (!isInsideWall(en.x, en.y + vy + sy, en.size)) en.y += vy + sy;
+// 檢查與其他怪物的碰撞
+let canMoveX = true;
+let canMoveY = true;
+enemies.forEach(other => {
+    if (other === en) return;
+    let dx = en.x - other.x;
+    let dy = en.y - other.y;
+    let dist = Math.hypot(dx, dy);
+    let minDist = en.size + other.size;
+    if (dist < minDist) {
+        // 計算推開方向
+        let pushAngle = Math.atan2(dy, dx);
+        let pushX = Math.cos(pushAngle) * (minDist - dist) * 0.5;
+        let pushY = Math.sin(pushAngle) * (minDist - dist) * 0.5;
+        en.x += pushX;
+        en.y += pushY;
+    }
+});
+
+// 檢查怪物是否已經在牆內，如果是則推離牆壁
+if (isInsideWall(en.x, en.y, en.size)) {
+    // 嘗試四個方向推離
+    const pushDist = en.size + 5;
+    const directions = [
+        { dx: pushDist, dy: 0 },
+        { dx: -pushDist, dy: 0 },
+        { dx: 0, dy: pushDist },
+        { dx: 0, dy: -pushDist }
+    ];
+    for (let dir of directions) {
+        if (!isInsideWall(en.x + dir.dx, en.y + dir.dy, en.size)) {
+            en.x += dir.dx;
+            en.y += dir.dy;
+            break;
+        }
+    }
+}
+
+// 移動前先檢查牆壁，確保不會進入牆內
+let newX = en.x + vx + sx;
+let newY = en.y + vy + sy;
+
+// 分別檢查X和Y軸移動
+if (!isInsideWall(newX, en.y, en.size)) {
+    en.x = newX;
+}
+if (!isInsideWall(en.x, newY, en.size)) {
+    en.y = newY;
+}
+
+// 如果移動後還是在牆內，回退
+if (isInsideWall(en.x, en.y, en.size)) {
+    en.x -= vx + sx;
+    en.y -= vy + sy;
+}
 // --------------------
         // 1. 計算距離與角度
         let dx = en.x - player.x;
@@ -739,7 +1887,7 @@ if (!isInsideWall(en.x, en.y + vy + sy, en.size)) en.y += vy + sy;
         // 3. 判斷可見性
         let isVisible = false;
         let flashlightRange = 300; // 射程
-        let flashlightAngle = 0.2; // 寬度
+        let flashlightAngle = 0.4; // 寬度
         let proximityRange = 80;   // 貼身強制可見範圍
 
 if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityRange) {
@@ -767,52 +1915,476 @@ if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityR
             ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
 
             // [這裡放原本繪製怪物的代碼]
-            ctx.fillStyle = en.color; 
-            ctx.beginPath(); ctx.arc(en.x, en.y, en.size, 0, 6.28); ctx.fill();
-            
-            // 繪製眼睛
-            ctx.save(); 
-            ctx.translate(en.x, en.y); ctx.rotate(en.angle);
-            ctx.fillStyle = en.eye; 
-            ctx.beginPath(); ctx.arc(en.size*0.6, -en.size*0.3, 3, 0, 6.28); 
-            ctx.arc(en.size*0.6, en.size*0.3, 3, 0, 6.28); ctx.fill();
+            ctx.save();
+            ctx.translate(en.x, en.y);
+            // 移除旋轉，改為只根據左右方向翻轉
+            if (en.angle > Math.PI / 2 || en.angle < -Math.PI / 2) {
+                ctx.scale(-1, 1); // 向左時水平翻轉
+            }
+
+            // 根據怪物類型繪製不同樣子
+            if (en.type === 1) {
+                // type 1: 小型快速喪屍 - 小孩喪屍（斷臂、恐怖）
+                // 身體
+                ctx.fillStyle = '#5a5a4a';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, en.size * 0.7, en.size * 0.9, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 破爛衣服
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.fillRect(-en.size * 0.5, -en.size * 0.3, en.size, en.size * 0.8);
+                ctx.fill();
+
+                // 頭部
+                ctx.fillStyle = '#6a6a5a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.4, -en.size * 0.7, en.size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 空洞眼睛（更大更恐怖）
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.3, -en.size * 0.8, 3, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.5, -en.size * 0.8, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 紅色眼眶
+                ctx.strokeStyle = '#800';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(en.size * 0.3, -en.size * 0.8, 3.5, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.5, -en.size * 0.8, 3.5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 張開的大嘴巴
+                ctx.fillStyle = '#200';
+                ctx.beginPath();
+                ctx.ellipse(en.size * 0.4, -en.size * 0.4, 4, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 尖牙
+                ctx.fillStyle = '#fff';
+                for (let i = 0; i < 2; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(en.size * 0.2 + i * 4, -en.size * 0.4);
+                    ctx.lineTo(en.size * 0.2 + i * 4 + 2, -en.size * 0.2);
+                    ctx.lineTo(en.size * 0.2 + i * 4 + 4, -en.size * 0.4);
+                    ctx.fill();
+                }
+
+                // 斷臂（只有一隻手臂）
+                ctx.strokeStyle = '#5a5a4a';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(0, -en.size * 0.2);
+                ctx.lineTo(en.size * 1.3, -en.size * 0.3);
+                ctx.stroke();
+
+                // 斷臂傷口
+                ctx.fillStyle = '#600';
+                ctx.beginPath();
+                ctx.arc(-en.size * 0.3, -en.size * 0.2, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 腿
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-en.size * 0.2, en.size * 0.7);
+                ctx.lineTo(-en.size * 0.3, en.size * 1.4);
+                ctx.moveTo(en.size * 0.2, en.size * 0.7);
+                ctx.lineTo(en.size * 0.3, en.size * 1.4);
+                ctx.stroke();
+            } else if (en.type === 2) {
+                // type 2: 中型平衡喪屍 - 標準喪屍（經典樣子）
+                // 身體
+                ctx.fillStyle = '#4a4a3a';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, en.size * 0.9, en.size, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 破爛衣服
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.fillRect(-en.size * 0.7, -en.size * 0.4, en.size * 1.4, en.size * 1.2);
+                ctx.fill();
+
+                // 衣服破洞
+                ctx.fillStyle = '#4a4a3a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.3, en.size * 0.2, 3, 0, Math.PI * 2);
+                ctx.arc(-en.size * 0.2, en.size * 0.4, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 頭部
+                ctx.fillStyle = '#5a5a4a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.6, -en.size * 0.7, en.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 空洞眼睛
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.4, -en.size * 0.8, 3, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.8, -en.size * 0.8, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 腐爛皮膚斑點
+                ctx.fillStyle = '#3a3a2a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.2, -en.size * 0.6, 2, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.9, -en.size * 0.5, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 張開的嘴巴
+                ctx.fillStyle = '#200';
+                ctx.beginPath();
+                ctx.ellipse(en.size * 0.6, -en.size * 0.5, 5, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 牙齒
+                ctx.fillStyle = '#ddd';
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(en.size * 0.3 + i * 3, -en.size * 0.5);
+                    ctx.lineTo(en.size * 0.3 + i * 3 + 1.5, -en.size * 0.3);
+                    ctx.lineTo(en.size * 0.3 + i * 3 + 3, -en.size * 0.5);
+                    ctx.fill();
+                }
+
+                // 雙臂向前伸
+                ctx.strokeStyle = '#4a4a3a';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, -en.size * 0.3);
+                ctx.lineTo(en.size * 1.5, -en.size * 0.5);
+                ctx.moveTo(0, -en.size * 0.3);
+                ctx.lineTo(-en.size * 0.5, -en.size * 0.1);
+                ctx.stroke();
+
+                // 腿
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-en.size * 0.3, en.size * 0.8);
+                ctx.lineTo(-en.size * 0.5, en.size * 1.5);
+                ctx.moveTo(en.size * 0.3, en.size * 0.8);
+                ctx.lineTo(en.size * 0.5, en.size * 1.5);
+                ctx.stroke();
+
+                // 血跡
+                ctx.fillStyle = '#600';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.2, -en.size * 0.3, 2, 0, Math.PI * 2);
+                ctx.arc(-en.size * 0.3, en.size * 0.2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (en.type === 3) {
+                // type 3: 大型強力喪屍 - 胖喪屍（巨型、多傷口）
+                // 身體
+                ctx.fillStyle = '#3a3a2a';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, en.size * 1.3, en.size * 1.1, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 破爛大衣服
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.fillRect(-en.size * 1.0, -en.size * 0.5, en.size * 2.0, en.size * 1.5);
+                ctx.fill();
+
+                // 多個衣服破洞
+                ctx.fillStyle = '#3a3a2a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.5, en.size * 0.3, 4, 0, Math.PI * 2);
+                ctx.arc(-en.size * 0.4, en.size * 0.5, 3, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.2, -en.size * 0.2, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 頭部
+                ctx.fillStyle = '#4a4a3a';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.8, -en.size * 0.8, en.size * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 大空洞眼睛
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.6, -en.size * 0.9, 4, 0, Math.PI * 2);
+                ctx.arc(en.size * 1.0, -en.size * 0.9, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 紅色眼眶
+                ctx.strokeStyle = '#900';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(en.size * 0.6, -en.size * 0.9, 4.5, 0, Math.PI * 2);
+                ctx.arc(en.size * 1.0, -en.size * 0.9, 4.5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 大嘴巴
+                ctx.fillStyle = '#100';
+                ctx.beginPath();
+                ctx.ellipse(en.size * 0.8, -en.size * 0.5, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 大牙齒
+                ctx.fillStyle = '#ccc';
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(en.size * 0.2 + i * 4, -en.size * 0.5);
+                    ctx.lineTo(en.size * 0.2 + i * 4 + 2, -en.size * 0.2);
+                    ctx.lineTo(en.size * 0.2 + i * 4 + 4, -en.size * 0.5);
+                    ctx.fill();
+                }
+
+                // 粗壯雙臂
+                ctx.strokeStyle = '#3a3a2a';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(0, -en.size * 0.4);
+                ctx.lineTo(en.size * 2, -en.size * 0.6);
+                ctx.moveTo(0, -en.size * 0.4);
+                ctx.lineTo(-en.size * 0.8, -en.size * 0.2);
+                ctx.stroke();
+
+                // 粗腿
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(-en.size * 0.6, en.size * 0.8);
+                ctx.lineTo(-en.size * 0.9, en.size * 1.8);
+                ctx.moveTo(en.size * 0.6, en.size * 0.8);
+                ctx.lineTo(en.size * 0.9, en.size * 1.8);
+                ctx.stroke();
+
+                // 多處大傷口和血跡
+                ctx.fillStyle = '#500';
+                ctx.beginPath();
+                ctx.arc(en.size * 0.3, -en.size * 0.2, 4, 0, Math.PI * 2);
+                ctx.arc(-en.size * 0.5, en.size * 0.3, 3, 0, Math.PI * 2);
+                ctx.arc(en.size * 0.6, en.size * 0.6, 3, 0, Math.PI * 2);
+                ctx.arc(-en.size * 0.2, -en.size * 0.5, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 傷口裂痕
+                ctx.strokeStyle = '#300';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(en.size * 0.3, -en.size * 0.2);
+                ctx.lineTo(en.size * 0.5, en.size * 0.1);
+                ctx.moveTo(-en.size * 0.5, en.size * 0.3);
+                ctx.lineTo(-en.size * 0.3, en.size * 0.5);
+                ctx.stroke();
+            }
+
             ctx.restore();
 
             // 繪製血條
-            let hpW = en.size * 2; 
+            let hpW = en.size * 2;
             ctx.fillStyle = '#200'; ctx.fillRect(en.x - hpW/2, en.y - en.size - 12, hpW, 4);
-            let hpPerc = en.hp / en.maxHp; 
-            ctx.fillStyle = hpPerc > 0.5 ? '#0f0' : (hpPerc > 0.25 ? '#ff0' : '#f00'); 
+            let hpPerc = en.hp / en.maxHp;
+            ctx.fillStyle = hpPerc > 0.5 ? '#0f0' : (hpPerc > 0.25 ? '#ff0' : '#f00');
             ctx.fillRect(en.x - hpW/2, en.y - en.size - 12, hpW * hpPerc, 4);
-            
+
             ctx.restore();
         }
     });
 
-    ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-    if (player.muzzleFlash > 0) {
+    ctx.save(); ctx.translate(player.x, player.y);
+    // 根據左右方向翻轉，不旋轉
+    if (player.angle > Math.PI / 2 || player.angle < -Math.PI / 2) {
+        ctx.scale(-1, 1); // 向左時水平翻轉
+    }
+
+    // 檢查是否正在翻滾
+    let isRolling = player.isRolling || false;
+    let rollRotation = 0;
+    let rollScale = 1;
+    let showLegs = true;
+
+    if (isRolling) {
+        // 翻滾動畫：身體沿著翻滾方向旋轉並變形
+        let rollProgress = 1 - (player.rollTimer / 20); // 0 到 1
+
+        // 非線性進度（開始快結束慢）
+        let easedProgress = 1 - Math.pow(1 - rollProgress, 3);
+
+        // 直接使用累積旋轉，不基於rollAngle
+        rollRotation = easedProgress * Math.PI * 2;
+        rollScale = 0.7 + Math.sin(easedProgress * Math.PI) * 0.3; // 0.4 到 1.0 的縮放，更明顯的壓扁效果
+        showLegs = false; // 翻滾時隱藏腿，像球體滾動
+    }
+
     ctx.save();
-    // 計算透明度：10/10 = 1.0 (最亮), 5/10 = 0.5, 0/10 = 0
-    ctx.globalAlpha = player.muzzleFlash / 10; 
-    
-    // 核心火光
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); 
-    // 讓半徑也隨時間稍微縮小一點 (從 25 縮到 15)
-    let dynamicRadius = 15 + player.muzzleFlash; 
-    ctx.arc(25, 0, dynamicRadius, 0, 6.28); 
-    ctx.fill();
-    
-    // 額外增加一層橘色暈光讓漸變更自然
-    ctx.fillStyle = '#ffaa00';
+    if (isRolling) {
+        // 先旋轉到翻滾方向，再進行翻滾旋轉
+        ctx.rotate(player.rollAngle);
+        ctx.rotate(rollRotation);
+        ctx.scale(rollScale, rollScale);
+
+        // 添加殘影效果
+        if (player.rollTimer > 5) {
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#4a4a4a';
+            ctx.beginPath();
+            ctx.ellipse(0, 5, 14, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // 繪製人類主角身體
+    // 身體（灰色衣服）
+    ctx.fillStyle = '#4a4a4a';
     ctx.beginPath();
-    ctx.arc(25, 0, dynamicRadius * 1.5, 0, 6.28);
+    ctx.ellipse(0, 5, 14, 22, 0, 0, Math.PI * 2);
     ctx.fill();
-    
+
+    // 計算移動動畫
+    let isMoving = (keys['KeyW'] || keys['KeyA'] || keys['KeyS'] || keys['KeyD']) && !isRolling;
+    let legOffset = isMoving ? Math.sin(Date.now() / 100) * 8 : 0;
+
+    // 只在非翻滾狀態下繪製腿
+    if (showLegs) {
+        // 左腿
+        ctx.fillStyle = '#3a3a3a';
+        ctx.beginPath();
+        ctx.moveTo(-10, 20);
+        ctx.lineTo(-14 + legOffset, 35);
+        ctx.lineTo(-2 + legOffset, 35);
+        ctx.lineTo(-2, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // 右腿
+        ctx.fillStyle = '#3a3a3a';
+        ctx.beginPath();
+        ctx.moveTo(10, 20);
+        ctx.lineTo(2 - legOffset, 35);
+        ctx.lineTo(14 - legOffset, 35);
+        ctx.lineTo(2, 20);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // 頭部（膚色）
+    ctx.fillStyle = '#e8c4a0';
+    ctx.beginPath();
+    ctx.arc(0, -8, 12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 頭髮（棕色）
+    ctx.fillStyle = '#5a3a2a';
+    ctx.beginPath();
+    ctx.arc(0, -12, 10, Math.PI, 0);
+    ctx.fill();
+
+    // 眼睛（黑色）
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(-4, -10, 2, 0, Math.PI * 2);
+    ctx.arc(4, -10, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 嘴巴
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-3, -4);
+    ctx.lineTo(3, -4);
+    ctx.stroke();
+
+    // 手臂（膚色）
+    ctx.fillStyle = '#e8c4a0';
+    ctx.beginPath();
+    ctx.moveTo(8, 0);
+    ctx.lineTo(15, 5);
+    ctx.lineTo(15, -5);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.restore();
-}
-    ctx.fillStyle = '#eee'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, 6.28); ctx.fill();
-    ctx.fillStyle = '#333'; ctx.fillRect(10, -4, 20, 8); 
+
+    ctx.restore();
+
+    // 繪製槍（跟著鼠標旋轉）
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+
+    // 根據左右方向翻轉槍
+    if (player.angle > Math.PI / 2 || player.angle < -Math.PI / 2) {
+        ctx.scale(1, -1); // 向左時垂直翻轉槍
+    }
+
+    if (player.muzzleFlash > 0) {
+        ctx.save();
+        let flashIntensity = player.muzzleFlash / 12;
+
+        // 核心（淡白色）
+        ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity * 0.8})`;
+        ctx.beginPath();
+        let coreRadius = 6 + Math.random() * 8;
+        ctx.arc(28, 0, coreRadius, 0, 6.28);
+        ctx.fill();
+
+        // 內層（淡黃色）
+        ctx.fillStyle = `rgba(255, 255, 200, ${flashIntensity * 0.6})`;
+        ctx.beginPath();
+        let midRadius = 10 + Math.random() * 12;
+        ctx.arc(28, 0, midRadius, 0, 6.28);
+        ctx.fill();
+
+        // 中層（淡橙色）
+        ctx.fillStyle = `rgba(255, 200, 100, ${flashIntensity * 0.4})`;
+        ctx.beginPath();
+        let outerRadius = 15 + Math.random() * 15;
+        ctx.arc(28, 0, outerRadius, 0, 6.28);
+        ctx.fill();
+
+        // 外層（淡紅色）
+        ctx.fillStyle = `rgba(255, 150, 100, ${flashIntensity * 0.2})`;
+        ctx.beginPath();
+        let farRadius = 20 + Math.random() * 20;
+        ctx.arc(28, 0, farRadius, 0, 6.28);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // 根據武器類型繪製不同槍
+    if (player.wepType === 1) {
+        // 手槍
+        ctx.fillStyle = '#333';
+        ctx.fillRect(10, -2, 15, 4);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(22, -1, 8, 2);
+        ctx.fillStyle = '#5a3a2a';
+        ctx.fillRect(8, -3, 5, 6);
+    } else if (player.wepType === 2) {
+        // 散彈槍
+        ctx.fillStyle = '#333';
+        ctx.fillRect(10, -3, 25, 6);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(30, -2, 15, 4);
+        ctx.fillStyle = '#5a3a2a';
+        ctx.fillRect(5, -4, 8, 8);
+        // 雙管
+        ctx.fillStyle = '#444';
+        ctx.fillRect(30, -4, 15, 2);
+        ctx.fillRect(30, 2, 15, 2);
+    } else if (player.wepType === 3) {
+        // MP5
+        ctx.fillStyle = '#333';
+        ctx.fillRect(10, -3, 20, 6);
+        ctx.fillStyle = '#222';
+        ctx.fillRect(25, -2, 12, 4);
+        ctx.fillStyle = '#5a3a2a';
+        ctx.fillRect(5, -4, 8, 8);
+        // 彈匣（向下延伸）
+        ctx.fillStyle = '#444';
+        ctx.fillRect(15, 3, 6, 12);
+    }
+
     ctx.restore();
     ctx.restore(); 
 
@@ -822,6 +2394,15 @@ if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityR
     light.addColorStop(0, 'rgba(0,0,0,0)'); light.addColorStop(1, 'rgba(0,0,0,1)');
     ctx.fillStyle = light; ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawRadar();
+    
+    // --- 调用所有补丁的 draw 逻辑 ---
+    if (typeof window.horrorEffectsDraw === 'function') window.horrorEffectsDraw();
+    if (typeof window.advancedHorrorDraw === 'function') window.advancedHorrorDraw();
+    if (typeof window.crimsonTraumaDraw === 'function') window.crimsonTraumaDraw();
+    if (typeof window.visceralHorrorDraw === 'function') window.visceralHorrorDraw();
+    if (typeof window.volumetricHellDraw === 'function') window.volumetricHellDraw();
+    if (typeof window.muzzleBlurDraw === 'function') window.muzzleBlurDraw();
+    if (typeof window.visceralBloodSplatterDraw === 'function') window.visceralBloodSplatterDraw();
 }
 
 function drawRadar() {
@@ -896,17 +2477,75 @@ function updateUI() {
     document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
 }
 
-window.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; });
-window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('mousemove', e => { 
+    const rect = canvas.getBoundingClientRect(); 
+    
+    // 精準瞄準補丁邏輯
+    const borderLeft = parseInt(window.getComputedStyle(canvas).borderLeftWidth) || 0;
+    const borderTop = parseInt(window.getComputedStyle(canvas).borderTopWidth) || 0;
+    const mouseCanvasX = e.clientX - rect.left - borderLeft;
+    const mouseCanvasY = e.clientY - rect.top - borderTop;
+    const scaleX = canvas.width / (rect.width - borderLeft * 2);
+    const scaleY = canvas.height / (rect.height - borderTop * 2);
+    
+    mousePos.x = mouseCanvasX * scaleX; 
+    mousePos.y = mouseCanvasY * scaleY; 
+});
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+
+    // F鍵切換全畫面
+    if (e.code === 'KeyF') {
+        if (!document.fullscreenElement) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+});
 window.addEventListener('keyup', e => keys[e.code] = false);
-window.addEventListener('mousedown', e => { 
-    if (gameStarted && e.button === 0) { 
-        fireShotgun(); 
-    } 
+window.addEventListener('mousedown', e => {
+    if (gameStarted && e.button === 0) {
+        isMDown = true;
+        fireShotgun();
+    } else if (gameStarted && e.button === 2) {
+        e.preventDefault(); // 防止右鍵選單
+        throwGrenade();
+    }
+});
+
+window.addEventListener('mouseup', e => {
+    if (e.button === 0) {
+        isMDown = false;
+    }
+});
+
+// 完全禁用右鍵選單
+window.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    return false;
 });
 
 initLevel();
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+let animationFrameId = null;
+function loop() {
+    if (!gameStarted) return;
+    update();
+    draw();
+    animationFrameId = requestAnimationFrame(loop);
+}
 
 // --- 修改後的遊戲啟動邏輯 ---
 
@@ -914,33 +2553,88 @@ let gameStarted = false;
 
 function startGame() {
     if (gameStarted) return;
-    
+
     // 1. 解鎖 Web Audio (瀏覽器規定音訊必須由使用者行為觸發)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
-    
+
     // 2. 播放一個初始音效增加回饋感
     playSound('pickup');
-    
-    // 3. 隱藏選單
-    const menu = document.getElementById('start-menu');
-    menu.style.opacity = '0';
-    setTimeout(() => {
-        menu.style.display = 'none';
-    }, 800);
-    
-    // 4. 正式啟動遊戲循環
+
+    // 3. 初始化手榴彈冷卻條
+    const grenadeFill = document.getElementById('grenade-fill');
+    if (grenadeFill) {
+        grenadeFill.style.width = '100%';
+        grenadeFill.style.background = '#ff6600';
+    }
+
+    // 4. 強制設置canvas cursor
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.style.cursor = 'crosshair';
+    }
+
+    // 5. 隱藏開始選單
+    document.getElementById('start-menu').style.display = 'none';
+
+    // 6. 進入全畫面
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) {
+        document.documentElement.msRequestFullscreen();
+    }
+
+    // 7. 立即啟動遊戲循環
     gameStarted = true;
-    loop(); 
+    loop();
+}
+
+function restartGame() {
+    // 隱藏死亡選單
+    document.getElementById('death-menu').style.display = 'none';
+
+    // 停止當前的遊戲循環
+    gameStarted = false;
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    // 重置遊戲狀態
+    level = 1;
+    player.hp = 100;
+    player.isDead = false;
+    player.x = startPos.x;
+    player.y = startPos.y;
+    player.angle = 0;
+    player.weaponTimers = { 1: 0, 2: 0, 3: 0 };
+    player.heat = 0;
+    player.isHot = false;
+    player.isRolling = false;
+    player.rollTimer = 0;
+    player.rollCooldown = 0;
+
+    // 清空敵人和物品
+    enemies = [];
+    collectibles = [];
+    healthItems = [];
+    decals = [];
+
+    // 重新初始化關卡
+    initLevel();
+
+    // 延遲重新開始遊戲循環
+    setTimeout(() => {
+        gameStarted = true;
+        loop();
+    }, 100);
 }
 // --- 地獄視覺強化補丁 ---
 (function injectHorrorEffects() {
-    const originalUpdate = window.update;
-    const originalDraw = window.draw;
-
-    window.update = function() {
-        originalUpdate();
+    window.horrorEffectsUpdate = function() {
 
         // 1. 受傷怪物血跡拖尾 (保留並優化)
         enemies.forEach(en => {
@@ -961,10 +2655,7 @@ function startGame() {
         }
     };
 
-    window.draw = function() {
-        // 先執行原始繪製
-        originalDraw();
-
+    window.horrorEffectsDraw = function() {
         // 3. 手電筒光暈不穩定感 (微弱閃爍)
         if (gameStarted && Math.random() > 0.99) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -995,15 +2686,12 @@ function startGame() {
 })();
 // --- 地獄細節強化補丁 (Splatter & Footprints) ---
 (function injectAdvancedHorror() {
-    const originalUpdate = window.update;
     let bloodOnBoots = 0; // 玩家鞋子沾血程度
 
-    window.update = function() {
+    window.advancedHorrorUpdate = function() {
         // 在執行原始邏輯前，紀錄敵人數量來偵測死亡
         const enemyCountBefore = enemies.length;
         const enemyPositions = enemies.map(e => ({x: e.x, y: e.y, hp: e.hp}));
-
-        originalUpdate();
 
         // 1. 死亡大噴濺：偵測誰剛死掉
         enemyPositions.forEach((oldEn, i) => {
@@ -1042,10 +2730,7 @@ function startGame() {
         }
     };
 
-    const originalDraw = window.draw;
-    window.draw = function() {
-        originalDraw();
-
+    window.advancedHorrorDraw = function() {
         // 3. 黑暗呼吸感 (環境壓迫)
         if (gameStarted) {
             let breath = Math.sin(Date.now() / 1500) * 0.05;
@@ -1062,9 +2747,8 @@ function startGame() {
 })();
 // --- 地獄視覺補丁：深紅暈眩與幽靈幻影 ---
 (function injectCrimsonTrauma() {
-    const originalDraw = window.draw;
-    const originalPlaySound = window.playSound;
     let bloodTrauma = 0; // 用於控制受傷後的暈眩程度
+    const originalPlaySound = window.playSound;
 
     // 2. 攔截音效：當被攻擊時觸發深紅暈眩
     window.playSound = function(type) {
@@ -1074,9 +2758,7 @@ function startGame() {
         }
     };
 
-    window.draw = function() {
-        // 先執行原始繪製
-        originalDraw();
+    window.crimsonTraumaDraw = function() {
 
         // 3. 地獄幻影 (心理壓迫) - 保留原本模糊黑影效果
         if (gameStarted && Math.random() > 0.997) {
@@ -1491,68 +3173,58 @@ function startGame() {
     document.getElementById('sidebar').style.width = '100vw';
 })();
 // --- 精準瞄準補丁：座標校正 (Precision Aiming Patch) ---
-(function injectPrecisionAim() {
-    // 重新定義滑鼠移動監聽
-    window.removeEventListener('mousemove', window.onmousemove); // 移除舊的（如果有的話）
-    
-    window.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        
-        // 1. 取得畫布的 CSS 邊框寬度 (預設是 4px)
-        const borderLeft = parseInt(window.getComputedStyle(canvas).borderLeftWidth) || 0;
-        const borderTop = parseInt(window.getComputedStyle(canvas).borderTopWidth) || 0;
-
-        // 2. 計算滑鼠在畫布內的實際 CSS 座標 (扣除邊框)
-        const mouseCanvasX = e.clientX - rect.left - borderLeft;
-        const mouseCanvasY = e.clientY - rect.top - borderTop;
-
-        // 3. 核心修正：考慮畫布縮放比例 (實際解析度 / CSS 顯示高度)
-        // 這樣即便你縮放瀏覽器或螢幕解析度不同，瞄準點也會完全重合
-        const scaleX = canvas.width / (rect.width - borderLeft * 2);
-        const scaleY = canvas.height / (rect.height - borderTop * 2);
-
-        mousePos.x = mouseCanvasX * scaleX;
-        mousePos.y = mouseCanvasY * scaleY;
-    });
-
-    // 額外美化：隱藏系統游標，改用遊戲內的準心（選配）
-    // canvas.style.cursor = 'none'; 
-    
-    console.log("瞄準校正補丁已載入：已修正邊框偏移與解析度縮放誤差。");
-})();
-// --- 終極自癒武器系統 (Self-Healing Weapon System) ---
+// 已整合到主滑鼠移動監聽器中，避免重複註冊
+// --- 終極整合武器系統 (Complete Integrated Weapon System) ---
 (function() {
-    // 1. 武器定義 (含大判定)
+    // 1. 武器定義 (整合所有規格)
     const SPECS = {
-        1: { name: 'PISTOL',  cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', auto: true, hit: 0.22 }, // 超大判定
-        2: { name: 'SHOTGUN', cd: 60, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', auto: true, hit: 0.50 }, // 扇形必中
+        1: { name: 'PISTOL',  cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', auto: true, hit: 0.22 },
+        2: { name: 'SHOTGUN', cd: 80, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', auto: true, hit: 0.50, scatterMult: 0.6 },
         3: { name: 'MP5',   cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', auto: true, hPer: 6.0, hit: 0.20 }
     };
 
-    // 2. 強制初始化函數 (確保變數永遠存在)
+    // 2. 強制初始化變數
     function ensureVars() {
         if (typeof player === 'undefined') return false;
         if (player.wepType === undefined) player.wepType = 1;
         if (player.heat === undefined) player.heat = 0;
         if (player.isHot === undefined) player.isHot = false;
+        // 為每個武器創建獨立的冷卻計時器
+        if (player.weaponTimers === undefined) {
+            player.weaponTimers = {
+                1: 0, // 手槍
+                2: 0, // 散彈槍
+                3: 0  // 輕機槍
+            };
+        }
         return true;
     }
 
-    let isMDown = false;
-
-    // 3. 重新綁定輸入
-    window.onkeydown = (e) => {
+    // 3. 統一輸入綁定
+    window.addEventListener('keydown', e => {
         if (!ensureVars()) return;
-        if (e.code === 'Digit1') player.wepType = 1;
-        if (e.code === 'Digit2') player.wepType = 2;
-        if (e.code === 'Digit3') player.wepType = 3;
-    };
-    window.onmousedown = (e) => { if(e.button === 0) isMDown = true; };
-    window.onmouseup = (e) => { if(e.button === 0) isMDown = false; };
+        let oldWeapon = player.wepType;
+        if (e.code === 'Digit1' && player.wepType !== 1) {
+            player.wepType = 1;
+            playSound('weapon_switch');
+        }
+        if (e.code === 'Digit2' && player.wepType !== 2) {
+            player.wepType = 2;
+            playSound('weapon_switch');
+        }
+        if (e.code === 'Digit3' && player.wepType !== 3) {
+            player.wepType = 3;
+            playSound('weapon_switch');
+        }
+    });
+    
+    // 移除整合武器系統的mousedown監聽器，使用主要監聽器
+    // window.addEventListener('mousedown', e => { if(e.button === 0) isMDown = true; });
+    // window.addEventListener('mouseup', e => { if(e.button === 0) isMDown = false; });
 
-    // 4. 重寫射擊核心邏輯
+    // 4. 完整射擊系統 (整合三個補丁的邏輯 + 增強視覺效果)
     window.fireShotgun = function() {
-        if (!ensureVars() || !gameStarted || player.shotTimer > 0) return;
+        if (!ensureVars() || !gameStarted || player.weaponTimers[player.wepType] > 0 || player.isRolling) return;
         
         const s = SPECS[player.wepType];
 
@@ -1561,56 +3233,143 @@ function startGame() {
             if (player.isHot) return;
             player.heat += s.hPer;
             if (player.heat >= 100) {
-                player.heat = 100; player.isHot = true;
-                player.shotTimer = 100; return;
+                player.heat = 100;
+                player.isHot = true;
+                player.weaponTimers[player.wepType] = 100;
+                return;
             }
         }
 
-        player.shotTimer = s.cd;
-        player.shake = (player.wepType === 2) ? 18 : 4;
-        player.muzzleFlash = 10;
-        if (typeof playSound === 'function') playSound('shot');
+        player.weaponTimers[player.wepType] = s.cd;
+        player.shake = (player.wepType === 2) ? 22 : (player.wepType === 3) ? 12 : 6;
+        player.muzzleFlash = 12;
+        if (typeof playSound === 'function') playSound('shot', player.wepType);
 
+        // 後坐力 (根據武器類型不同)
+        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : 35;
+        let rx = -Math.cos(player.angle) * recoilDist;
+        let ry = -Math.sin(player.angle) * recoilDist;
+        if (!isInsideWall(player.x + rx, player.y, player.size)) player.x += rx;
+        if (!isInsideWall(player.x, player.y + ry, player.size)) player.y += ry;
+
+        // --- 增強槍口火焰效果 ---
+        // 主火焰球
+        for (let i = 0; i < 6; i++) {
+            let flameAng = player.angle + (Math.random() - 0.5) * 0.3;
+            let flameDist = 15 + Math.random() * 25;
+            let flameX = player.x + Math.cos(flameAng) * flameDist;
+            let flameY = player.y + Math.sin(flameAng) * flameDist;
+            particles.push(new Particle(flameX, flameY, Math.cos(flameAng)*6, Math.sin(flameAng)*6, 15+Math.random()*10, 8+Math.random()*8, '#ff8800', 0.85));
+        }
+
+        // 明亮的核心
+        for (let i = 0; i < 4; i++) {
+            let coreAng = player.angle + (Math.random() - 0.5) * 0.2;
+            let coreX = player.x + Math.cos(coreAng) * 22;
+            let coreY = player.y + Math.sin(coreAng) * 22;
+            particles.push(new Particle(coreX, coreY, Math.cos(coreAng)*8, Math.sin(coreAng)*8, 10, 5, '#ffff00', 0.9));
+        }
+
+        // --- 煙霧與熱浪 ---
+        for (let i = 0; i < 8; i++) {
+            let smokeAng = player.angle + (Math.random() - 0.5) * 1.5;
+            let smokeSpd = 1.5 + Math.random() * 3;
+            let smokeDist = Math.random() * 10;
+            let smokeX = player.x + Math.cos(smokeAng) * smokeDist;
+            let smokeY = player.y + Math.sin(smokeAng) * smokeDist;
+            particles.push(new Particle(smokeX, smokeY, Math.cos(smokeAng)*smokeSpd, Math.sin(smokeAng)*smokeSpd, 40+Math.random()*30, 6+Math.random()*10, '#555', 0.88));
+        }
+
+        // --- 增強彈殼拋出 ---
+        let shellAngle = player.angle + Math.PI/2 + (Math.random()-0.5)*0.4;
+        for (let j = 0; j < (player.wepType === 2 ? 3 : 1); j++) {
+            shells.push({ 
+                x: player.x, 
+                y: player.y, 
+                vx: Math.cos(shellAngle)*6 + (Math.random()-0.5)*3, 
+                vy: Math.sin(shellAngle)*6 + (Math.random()-0.5)*3, 
+                life: 80, 
+                angle: Math.random()*Math.PI*2, 
+                rot: (Math.random()-0.5)*0.8 
+            });
+        }
+
+        // 核心射擊迴圈
         for (let i = 0; i < s.pellets; i++) {
             let pAngle = player.angle + (Math.random() - 0.5) * s.spread;
-            let hitDist = s.range;
+            
+            // 散彈槍隨機射程
+            let maxRange = s.range;
+            if (player.wepType === 2 && s.scatterMult) {
+                maxRange = s.range * (s.scatterMult + Math.random() * 0.6);
+            }
+            
+            let hitDist = maxRange;
+            let targetHit = null;
 
-            // 碰撞檢測
-            for (let d = 0; d < s.range; d += 10) {
-                if (isInsideWall(player.x + Math.cos(pAngle)*d, player.y + Math.sin(pAngle)*d, 2)) {
-                    hitDist = d; break;
+            // 射線步進偵測 (牆壁 + 怪物阻擋)
+            for (let d = 0; d < maxRange; d += 8) {
+                let currX = player.x + Math.cos(pAngle) * d;
+                let currY = player.y + Math.sin(pAngle) * d;
+
+                // 檢查牆壁
+                if (isInsideWall(currX, currY, 2)) {
+                    hitDist = d;
+                    break;
+                }
+
+                // 檢查怪物阻擋 (子彈只打第一個目標)
+                let hitEnemy = enemies.find(en => {
+                    let distToPoint = Math.hypot(en.x - currX, en.y - currY);
+                    return distToPoint < en.size;
+                });
+
+                if (hitEnemy) {
+                    hitDist = d;
+                    targetHit = hitEnemy;
+                    break;
                 }
             }
 
-            tracers.push({ x: player.x, y: player.y, angle: pAngle, len: hitDist, life: 10, color: s.color });
+            // 繪製彈道 (加強亮度)
+            tracers.push({ 
+                x: player.x, 
+                y: player.y, 
+                angle: pAngle, 
+                len: hitDist, 
+                life: 12, 
+                color: s.color 
+            });
 
-            // 強化判定碰撞
-            enemies.forEach(en => {
-                let dx = en.x - player.x, dy = en.y - player.y;
-                if (Math.hypot(dx, dy) < hitDist) {
-                    let a = Math.atan2(dy, dx);
-                    // 使用 SPECS 中定義的高容錯判定值
-                    if (Math.abs(((a - pAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI)) < s.hit) {
-                        en.hp -= s.dmg;
-                        en.kX = Math.cos(a) * (s.pellets > 1 ? 15 : 6);
-                        en.kY = Math.sin(a) * (s.pellets > 1 ? 15 : 6);
-                        particles.push(new Particle(en.x, en.y, Math.cos(a)*5, Math.sin(a)*5, 15, 2, '#c00'));
+            // 造成傷害
+            if (targetHit) {
+                targetHit.hp -= s.dmg;
+                let pushAng = Math.atan2(targetHit.y - player.y, targetHit.x - player.x);
+                targetHit.kX = Math.cos(pushAng) * (s.pellets > 1 ? 18 : 8);
+                targetHit.kY = Math.sin(pushAng) * (s.pellets > 1 ? 18 : 8);
+                
+                // 增強命中特效
+                if (typeof Particle !== 'undefined') {
+                    for (let j = 0; j < 8; j++) {
+                        particles.push(new Particle(targetHit.x, targetHit.y, Math.cos(pushAng+(Math.random()-0.5)*2)*8, Math.sin(pushAng+(Math.random()-0.5)*2)*8, 20, 3, '#ff3333'));
                     }
                 }
-            });
+            }
         }
     };
 
-    // 5. 強制接管 Update 循環
+    // 5. 武器系統 update 邏輯
     const baseUpdate = window.update;
-    window.update = function() {
-        if (!ensureVars()) { 
-            if (typeof baseUpdate === 'function') baseUpdate();
-            return; 
-        }
-        
-        baseUpdate();
+    window.weaponSystemUpdate = function() {
+        if (!ensureVars()) return;
         if (!gameStarted) return;
+
+        // 更新所有武器的冷卻計時器
+        for (let weaponId in player.weaponTimers) {
+            if (player.weaponTimers[weaponId] > 0) {
+                player.weaponTimers[weaponId]--;
+            }
+        }
 
         // 步槍冷卻
         if (player.heat > 0) player.heat -= (player.isHot ? 0.6 : 0.4);
@@ -1619,7 +3378,7 @@ function startGame() {
         // 自動連發
         if (isMDown && SPECS[player.wepType].auto) window.fireShotgun();
 
-        // UI 同步
+        // UI 同步 - 使用原有的reload-fill顯示當前武器狀態
         const rf = document.getElementById('reload-fill');
         const rl = rf?.parentElement?.previousElementSibling;
         if (rf) {
@@ -1628,7 +3387,7 @@ function startGame() {
                 rf.style.background = player.isHot ? "#f00" : `rgb(${player.heat*2.55}, ${255-player.heat*2.55}, 0)`;
                 if(rl) rl.innerText = player.isHot ? "OVERHEATED!" : "BARREL TEMP";
             } else {
-                let progress = Math.max(0, 100 - (player.shotTimer / SPECS[player.wepType].cd * 100));
+                let progress = Math.max(0, 100 - (player.weaponTimers[player.wepType] / SPECS[player.wepType].cd * 100));
                 rf.style.width = progress + "%";
                 rf.style.background = SPECS[player.wepType].color;
                 if(rl) rl.innerText = SPECS[player.wepType].name + " READY";
@@ -1636,23 +3395,20 @@ function startGame() {
         }
     };
 
-    console.log("自癒武器系統已啟動：判定大小已提升，且代碼具備防失效機制。");
+    console.log("整合武器系統已啟動：手槍、散彈槍、步槍統一管理。");
 })();
+
 // --- 頂層強制顯示計時器 (Top-Layer Timer Patch) ---
 (function injectPersistentTimer() {
-    // 1. 清除可能存在的舊計時器
     const oldTimer = document.getElementById('survival-timer-overlay');
     if (oldTimer) oldTimer.remove();
 
-    // 2. 建立 UI 元素
     const timerDiv = document.createElement('div');
     timerDiv.id = 'survival-timer-overlay';
-    
-    // 設定樣式：固定在畫布右上角區域，不佔用佈局空間
     timerDiv.style.cssText = `
         position: absolute;
         top: 20px;
-        right: 20px;
+        left: 20px;
         padding: 10px 15px;
         background: rgba(0, 0, 0, 0.7);
         color: #0f4;
@@ -1661,22 +3417,17 @@ function startGame() {
         font-weight: bold;
         border: 2px solid #0f4;
         border-radius: 5px;
-        pointer-events: none; /* 確保滑鼠點擊可以穿透，不影響遊戲操作 */
+        pointer-events: none;
         z-index: 9999;
         display: none;
         text-shadow: 0 0 5px #0f4;
     `;
     document.body.appendChild(timerDiv);
 
-    // 3. 初始化時間變數
     let startTime = 0;
     let timerRunning = false;
 
-    // 4. 強制掛載到遊戲循環
-    const baseUpdate = window.update;
-    window.update = function() {
-        if (baseUpdate) baseUpdate();
-
+    window.timerUpdate = function() {
         if (typeof gameStarted !== 'undefined' && gameStarted) {
             if (!timerRunning) {
                 startTime = Date.now();
@@ -1684,7 +3435,6 @@ function startGame() {
                 timerDiv.style.display = 'block';
             }
 
-            // 計算並顯示時間
             let elapsed = Date.now() - startTime;
             let mins = Math.floor(elapsed / 60000).toString().padStart(2, '0');
             let secs = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
@@ -1692,192 +3442,12 @@ function startGame() {
             
             timerDiv.innerText = `${mins}:${secs}.${ms}`;
         } else {
-            // 遊戲結束或未開始時隱藏
             timerRunning = false;
             timerDiv.style.display = 'none';
         }
     };
 
-    console.log("計時器補丁已強制掛載：遊戲開始後會自動出現在右上角。");
-})();
-(function injectShotgunVariance() {
-    // 確保武器系統規格存在
-    const VARIANCE_WPN_ID = 2; // 散彈槍在你的 SPECS 中是 ID 2
-    
-    // 儲存原始的 fireShotgun 函數
-    const originalFireShotgun = window.fireShotgun;
-
-    window.fireShotgun = function() {
-        // 如果當前不是散彈槍，直接執行原始邏輯並返回
-        if (typeof player === 'undefined' || player.wepType !== VARIANCE_WPN_ID) {
-            return originalFireShotgun();
-        }
-
-        // 檢查冷卻與遊戲狀態 (複製原本的防護邏輯)
-        if (!gameStarted || player.shotTimer > 0) return;
-
-        // 取得散彈槍規格
-        // 注意：這裡假設 SPECS 是定義在閉包內的，
-        // 但因為我們在同一個作用域，可以直接定義我們要的隨機邏輯
-        const s = {
-            cd: 80,
-            baseRange: 250, // 原始距離
-            pellets: 6,
-            spread: 1.0,
-            dmg: 4,
-            color: '#ffaa00',
-            hit: 0.50
-        };
-
-        // 執行開槍基礎效果
-        player.shotTimer = s.cd;
-        player.shake = 18;
-        player.muzzleFlash = 10;
-        if (typeof playSound === 'function') playSound('shot');
-
-        // 核心修改：為每一顆子彈計算不同的距離
-        for (let i = 0; i < s.pellets; i++) {
-            let pAngle = player.angle + (Math.random() - 0.5) * s.spread;
-            
-            // --- 隨機距離邏輯 ---
-            // 讓距離在 60% 到 120% 之間隨機跳動
-            let randomRangeMult = 0.6 + Math.random() * 0.6; 
-            let individualRange = s.baseRange * randomRangeMult;
-            
-            let hitDist = individualRange;
-
-            // 碰撞檢測 (牆壁)
-            for (let d = 0; d < individualRange; d += 10) {
-                if (isInsideWall(player.x + Math.cos(pAngle) * d, player.y + Math.sin(pAngle) * d, 2)) {
-                    hitDist = d;
-                    break;
-                }
-            }
-
-            // 繪製彈道 (使用計算出的個體距離)
-            if (typeof tracers !== 'undefined') {
-                tracers.push({ 
-                    x: player.x, 
-                    y: player.y, 
-                    angle: pAngle, 
-                    len: hitDist, 
-                    life: 10, 
-                    color: s.color 
-                });
-            }
-
-            // 傷害判定
-            enemies.forEach(en => {
-                let dx = en.x - player.x, dy = en.y - player.y;
-                let distToEn = Math.hypot(dx, dy);
-                
-                // 只有在子彈當前的隨機射程內才會造成傷害
-                if (distToEn < hitDist) {
-                    let a = Math.atan2(dy, dx);
-                    if (Math.abs(((a - pAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI)) < s.hit) {
-                        en.hp -= s.dmg;
-                        en.kX = Math.cos(a) * 15;
-                        en.kY = Math.sin(a) * 15;
-                        if (typeof Particle !== 'undefined') {
-                            particles.push(new Particle(en.x, en.y, Math.cos(a) * 5, Math.sin(a) * 5, 15, 2, '#c00'));
-                        }
-                    }
-                }
-            });
-        }
-    };
-
-    console.log("散彈槍隨機射程補丁已啟用：彈群現在具有不規則的破碎邊緣。");
-})();
-(function injectBulletBlocking() {
-    const originalFire = window.fireShotgun;
-
-    window.fireShotgun = function() {
-        // 先執行原始邏輯取得當前武器規格
-        // 注意：我們需要重寫內部的偵測邏輯，所以我們直接在這裡處理核心運算
-        if (!gameStarted || player.shotTimer > 0) return;
-
-        // 武器參數定義（對應你現有的 SPECS）
-        const WEP_DEFS = {
-            1: { cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', hit: 0.22 },
-            2: { cd: 60, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', hit: 0.50 },
-            3: { cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', hPer: 6.0, hit: 0.20 }
-        };
-
-        const s = WEP_DEFS[player.wepType];
-        
-        // 步槍過熱檢查
-        if (player.wepType === 3 && player.isHot) return;
-        if (player.wepType === 3) {
-            player.heat += s.hPer;
-            if (player.heat >= 100) { player.heat = 100; player.isHot = true; player.shotTimer = 100; return; }
-        }
-
-        player.shotTimer = s.cd;
-        player.shake = (player.wepType === 2) ? 18 : 4;
-        player.muzzleFlash = 10;
-        if (typeof playSound === 'function') playSound('shot');
-
-        for (let i = 0; i < s.pellets; i++) {
-            let pAngle = player.angle + (Math.random() - 0.5) * (s.spread || 0);
-            
-            // 隨機距離 (沿用你之前的距離不一功能)
-            let individualMaxRange = (player.wepType === 2) ? s.range * (0.6 + Math.random() * 0.6) : s.range;
-            
-            let hitDist = individualMaxRange;
-            let targetHit = null;
-
-            // --- 核心改動：射線步進偵測牆壁與怪物 ---
-            // 每 8 像素檢查一次路徑
-            for (let d = 0; d < individualMaxRange; d += 8) {
-                let currX = player.x + Math.cos(pAngle) * d;
-                let currY = player.y + Math.sin(pAngle) * d;
-
-                // 1. 檢查牆壁阻擋
-                if (isInsideWall(currX, currY, 2)) {
-                    hitDist = d;
-                    break;
-                }
-
-                // 2. 檢查怪物阻擋 (不會穿過怪物)
-                let hitEnemy = enemies.find(en => {
-                    let distToPoint = Math.hypot(en.x - currX, en.y - currY);
-                    return distToPoint < en.size; // 如果點落在怪物圓形碰撞區內
-                });
-
-                if (hitEnemy) {
-                    hitDist = d;
-                    targetHit = hitEnemy; // 標記被這顆子彈打中的第一個怪物
-                    break; 
-                }
-            }
-
-            // 繪製彈道
-            tracers.push({ 
-                x: player.x, 
-                y: player.y, 
-                angle: pAngle, 
-                len: hitDist, 
-                life: 10, 
-                color: s.color 
-            });
-
-            // 處理傷害
-            if (targetHit) {
-                targetHit.hp -= s.dmg;
-                let pushAng = Math.atan2(targetHit.y - player.y, targetHit.x - player.x);
-                targetHit.kX = Math.cos(pushAng) * (s.pellets > 1 ? 15 : 6);
-                targetHit.kY = Math.sin(pushAng) * (s.pellets > 1 ? 15 : 6);
-                
-                // 產生血花特效
-                if (typeof Particle !== 'undefined') {
-                    particles.push(new Particle(targetHit.x, targetHit.y, Math.cos(pushAng)*5, Math.sin(pushAng)*5, 15, 2, '#c00'));
-                }
-            }
-        }
-    };
-
-    console.log("子彈阻擋系統已啟用：子彈現在會停在命中的第一個目標上。");
+    console.log("計時器補丁已準備好。");
 })();
 // --- 戰術閃避補丁 (Tactical Roll Patch) ---
 (function injectDodgeRoll() {
@@ -1889,8 +3459,8 @@ function startGame() {
         player.rollAngle = 0;
     }
 
-    const ROLL_DURATION = 15; // 翻滾持續幀數 (約 0.25秒)
-    const ROLL_SPEED = 12;    // 翻滾速度 (一般移動速度是 4.8)
+    const ROLL_DURATION = 20; // 翻滾持續幀數 (約 0.33秒)
+    const ROLL_SPEED = 5;    // 翻滾速度 (一般移動速度是 4.8)
     const ROLL_CD_TIME = 50;  // 冷卻時間 (約 0.75秒)
 
     // 2. 監聽空白鍵
