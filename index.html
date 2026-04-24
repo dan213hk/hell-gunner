@@ -99,8 +99,8 @@
 <div class="controls">
     <div class="label" style="margin-bottom: 5px;">戰術簡報 (INTELLIGENCE)</div>
     ● 進行血祭（收集 3 個五芒星）以開啟傳送門。<br>
-    ● 按 **WASD** 移動，**滑鼠左鍵** 散彈槍除魔。<br><br>
-    
+    ● 按 *WASD* 移動，*滑鼠左鍵* 射擊 *Space* 戰術迴避<br>
+    ● 選擇武器 按 1) 手槍 2) 散彈槍 3) 輕機槍<br>
     <div class="label" style="margin-bottom: 5px;">威脅評估 (THREAT LOG)</div>
     <span style="color: #ffff00;">● 迅捷者 (Yellow Eye):</span> 體型小、移速極快，群體出沒時極其危險。抗擊退力弱。<br>
     <span style="color: #ff0000;">● 漫遊屍 (Red Eye):</span> 標準型惡魔，體力與速度均衡。最常見的威脅。<br>
@@ -1490,187 +1490,574 @@ function startGame() {
     document.getElementById('sidebar').style.height = '60px';
     document.getElementById('sidebar').style.width = '100vw';
 })();
-// --- 全螢幕與像素適配補丁 (Auto-Scale & High-DPI Patch) ---
-(function injectResponsiveCanvas() {
-    // 1. 強制 CSS 覆蓋：讓遊戲容器與畫布填滿螢幕
-    const style = document.createElement('style');
-    style.innerHTML = `
-        html, body { 
-            width: 100%; height: 100%; margin: 0; padding: 0; 
-            overflow: hidden; touch-action: none; position: fixed;
-        }
-        #game-container { 
-            width: 100vw; height: 100vh; border: none; 
-            display: flex; flex-direction: column; 
-        }
-        canvas { 
-            width: 100% !important; height: auto !important; 
-            flex-grow: 1; object-fit: contain; 
-            background: #000;
-        }
-        #sidebar { 
-            width: 100% !important; height: 80px !important; 
-            flex-direction: row !important; padding: 5px !important;
-            font-size: 10px; border: none; border-top: 2px solid #4a0000;
-            background: rgba(10, 0, 0, 0.9); z-index: 10;
-        }
-        .ui-box { margin: 0 5px !important; flex: 1; }
-        #radar-container, .controls { display: none !important; } /* 手機版隱藏雷達以省空間 */
-    `;
-    document.head.appendChild(style);
-
-    function resizeGame() {
-        const dpr = window.devicePixelRatio || 1;
-        const displayWidth = window.innerWidth;
-        const displayHeight = window.innerHeight - 80; // 扣除底部 UI 欄
-
-        // 保持原本的遊戲邏輯比例 (1000:750 = 4:3)
-        // 如果想填滿全螢幕不留黑邊，可以直接用 displayWidth/Height
-        canvas.width = displayWidth * dpr;
-        canvas.height = displayHeight * dpr;
-
-        // 更新攝像機與繪製相關的縮放 (如果需要)
-        // 注意：這會改變你的視線範圍。若要保持遊戲難度一致，建議固定 Canvas 邏輯分辨率：
-        /* canvas.width = 1000; 
-        canvas.height = 750; 
-        */
+// --- 精準瞄準補丁：座標校正 (Precision Aiming Patch) ---
+(function injectPrecisionAim() {
+    // 重新定義滑鼠移動監聽
+    window.removeEventListener('mousemove', window.onmousemove); // 移除舊的（如果有的話）
+    
+    window.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
         
-        // 重新繪製以防畫面閃爍
-        if (typeof draw === "function") draw();
-    }
+        // 1. 取得畫布的 CSS 邊框寬度 (預設是 4px)
+        const borderLeft = parseInt(window.getComputedStyle(canvas).borderLeftWidth) || 0;
+        const borderTop = parseInt(window.getComputedStyle(canvas).borderTopWidth) || 0;
 
-    // 2. 監聽螢幕旋轉與縮放
-    window.addEventListener('resize', resizeGame);
-    window.addEventListener('orientationchange', () => {
-        setTimeout(resizeGame, 300);
+        // 2. 計算滑鼠在畫布內的實際 CSS 座標 (扣除邊框)
+        const mouseCanvasX = e.clientX - rect.left - borderLeft;
+        const mouseCanvasY = e.clientY - rect.top - borderTop;
+
+        // 3. 核心修正：考慮畫布縮放比例 (實際解析度 / CSS 顯示高度)
+        // 這樣即便你縮放瀏覽器或螢幕解析度不同，瞄準點也會完全重合
+        const scaleX = canvas.width / (rect.width - borderLeft * 2);
+        const scaleY = canvas.height / (rect.height - borderTop * 2);
+
+        mousePos.x = mouseCanvasX * scaleX;
+        mousePos.y = mouseCanvasY * scaleY;
     });
 
-    // 3. 初始執行一次
-    resizeGame();
-
-    // 4. 防止手機瀏覽器「下拉重新整理」或「左右滑動翻頁」
-    document.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 1 || !gameStarted) return;
-        e.preventDefault();
-    }, { passive: false });
-
-    console.log("Hell-Gunner: Screen Adaptation Patch Applied.");
+    // 額外美化：隱藏系統游標，改用遊戲內的準心（選配）
+    // canvas.style.cursor = 'none'; 
+    
+    console.log("瞄準校正補丁已載入：已修正邊框偏移與解析度縮放誤差。");
 })();
-// --- 橫向螢幕強制提示補丁 (Orientation Guard Patch) ---
-(function injectOrientationGuard() {
-    // 1. 建立提示層的樣式
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #orientation-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: radial-gradient(circle, #4a0000 0%, #000 100%);
-            z-index: 9999; display: none; flex-direction: column;
-            justify-content: center; align-items: center; color: #ff0000;
-            font-family: 'Microsoft JhengHei', sans-serif; text-align: center;
+// --- 終極自癒武器系統 (Self-Healing Weapon System) ---
+(function() {
+    // 1. 武器定義 (含大判定)
+    const SPECS = {
+        1: { name: 'PISTOL',  cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', auto: true, hit: 0.22 }, // 超大判定
+        2: { name: 'SHOTGUN', cd: 60, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', auto: true, hit: 0.50 }, // 扇形必中
+        3: { name: 'MP5',   cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', auto: true, hPer: 6.0, hit: 0.20 }
+    };
+
+    // 2. 強制初始化函數 (確保變數永遠存在)
+    function ensureVars() {
+        if (typeof player === 'undefined') return false;
+        if (player.wepType === undefined) player.wepType = 1;
+        if (player.heat === undefined) player.heat = 0;
+        if (player.isHot === undefined) player.isHot = false;
+        return true;
+    }
+
+    let isMDown = false;
+
+    // 3. 重新綁定輸入
+    window.onkeydown = (e) => {
+        if (!ensureVars()) return;
+        if (e.code === 'Digit1') player.wepType = 1;
+        if (e.code === 'Digit2') player.wepType = 2;
+        if (e.code === 'Digit3') player.wepType = 3;
+    };
+    window.onmousedown = (e) => { if(e.button === 0) isMDown = true; };
+    window.onmouseup = (e) => { if(e.button === 0) isMDown = false; };
+
+    // 4. 重寫射擊核心邏輯
+    window.fireShotgun = function() {
+        if (!ensureVars() || !gameStarted || player.shotTimer > 0) return;
+        
+        const s = SPECS[player.wepType];
+
+        // 步槍過熱檢查
+        if (player.wepType === 3) {
+            if (player.isHot) return;
+            player.heat += s.hPer;
+            if (player.heat >= 100) {
+                player.heat = 100; player.isHot = true;
+                player.shotTimer = 100; return;
+            }
         }
-        .phone-icon {
-            width: 60px; height: 100px; border: 4px solid #ff0000;
-            border-radius: 10px; position: relative; margin-bottom: 20px;
-            animation: rotatePhone 2s ease-in-out infinite;
+
+        player.shotTimer = s.cd;
+        player.shake = (player.wepType === 2) ? 18 : 4;
+        player.muzzleFlash = 10;
+        if (typeof playSound === 'function') playSound('shot');
+
+        for (let i = 0; i < s.pellets; i++) {
+            let pAngle = player.angle + (Math.random() - 0.5) * s.spread;
+            let hitDist = s.range;
+
+            // 碰撞檢測
+            for (let d = 0; d < s.range; d += 10) {
+                if (isInsideWall(player.x + Math.cos(pAngle)*d, player.y + Math.sin(pAngle)*d, 2)) {
+                    hitDist = d; break;
+                }
+            }
+
+            tracers.push({ x: player.x, y: player.y, angle: pAngle, len: hitDist, life: 10, color: s.color });
+
+            // 強化判定碰撞
+            enemies.forEach(en => {
+                let dx = en.x - player.x, dy = en.y - player.y;
+                if (Math.hypot(dx, dy) < hitDist) {
+                    let a = Math.atan2(dy, dx);
+                    // 使用 SPECS 中定義的高容錯判定值
+                    if (Math.abs(((a - pAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI)) < s.hit) {
+                        en.hp -= s.dmg;
+                        en.kX = Math.cos(a) * (s.pellets > 1 ? 15 : 6);
+                        en.kY = Math.sin(a) * (s.pellets > 1 ? 15 : 6);
+                        particles.push(new Particle(en.x, en.y, Math.cos(a)*5, Math.sin(a)*5, 15, 2, '#c00'));
+                    }
+                }
+            });
         }
-        .phone-icon::after {
-            content: ''; position: absolute; width: 10px; height: 10px;
-            background: #ff0000; border-radius: 50%; bottom: 10px; left: 25px;
+    };
+
+    // 5. 強制接管 Update 循環
+    const baseUpdate = window.update;
+    window.update = function() {
+        if (!ensureVars()) { 
+            if (typeof baseUpdate === 'function') baseUpdate();
+            return; 
         }
-        @keyframes rotatePhone {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(-90deg); }
-            100% { transform: rotate(-90deg); }
+        
+        baseUpdate();
+        if (!gameStarted) return;
+
+        // 步槍冷卻
+        if (player.heat > 0) player.heat -= (player.isHot ? 0.6 : 0.4);
+        if (player.isHot && player.heat <= 0) player.isHot = false;
+
+        // 自動連發
+        if (isMDown && SPECS[player.wepType].auto) window.fireShotgun();
+
+        // UI 同步
+        const rf = document.getElementById('reload-fill');
+        const rl = rf?.parentElement?.previousElementSibling;
+        if (rf) {
+            if (player.wepType === 3) {
+                rf.style.width = player.heat + "%";
+                rf.style.background = player.isHot ? "#f00" : `rgb(${player.heat*2.55}, ${255-player.heat*2.55}, 0)`;
+                if(rl) rl.innerText = player.isHot ? "OVERHEATED!" : "BARREL TEMP";
+            } else {
+                let progress = Math.max(0, 100 - (player.shotTimer / SPECS[player.wepType].cd * 100));
+                rf.style.width = progress + "%";
+                rf.style.background = SPECS[player.wepType].color;
+                if(rl) rl.innerText = SPECS[player.wepType].name + " READY";
+            }
         }
-        .guard-text { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
-        .guard-sub { font-size: 14px; color: #880000; margin-top: 10px; }
+    };
+
+    console.log("自癒武器系統已啟動：判定大小已提升，且代碼具備防失效機制。");
+})();
+// --- 頂層強制顯示計時器 (Top-Layer Timer Patch) ---
+(function injectPersistentTimer() {
+    // 1. 清除可能存在的舊計時器
+    const oldTimer = document.getElementById('survival-timer-overlay');
+    if (oldTimer) oldTimer.remove();
+
+    // 2. 建立 UI 元素
+    const timerDiv = document.createElement('div');
+    timerDiv.id = 'survival-timer-overlay';
+    
+    // 設定樣式：固定在畫布右上角區域，不佔用佈局空間
+    timerDiv.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #0f4;
+        font-family: 'Courier New', monospace;
+        font-size: 24px;
+        font-weight: bold;
+        border: 2px solid #0f4;
+        border-radius: 5px;
+        pointer-events: none; /* 確保滑鼠點擊可以穿透，不影響遊戲操作 */
+        z-index: 9999;
+        display: none;
+        text-shadow: 0 0 5px #0f4;
     `;
-    document.head.appendChild(style);
+    document.body.appendChild(timerDiv);
 
-    // 2. 建立提示層 DOM
-    const overlay = document.createElement('div');
-    overlay.id = 'orientation-overlay';
-    overlay.innerHTML = `
-        <div class="phone-icon"></div>
-        <div class="guard-text">偵測到維度錯誤</div>
-        <div class="guard-sub">請旋轉手機進行橫向戰鬥</div>
-    `;
-    document.body.appendChild(overlay);
+    // 3. 初始化時間變數
+    let startTime = 0;
+    let timerRunning = false;
 
-    // 3. 檢查旋轉狀態的函數
-    function checkOrientation() {
-        // 判斷條件：如果高度大於寬度（直向）且是手機端
-        const isPortrait = window.innerHeight > window.innerWidth;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // 4. 強制掛載到遊戲循環
+    const baseUpdate = window.update;
+    window.update = function() {
+        if (baseUpdate) baseUpdate();
 
-        if (isMobile && isPortrait) {
-            overlay.style.display = 'flex';
-            // 暫停遊戲邏輯（如果需要）
+        if (typeof gameStarted !== 'undefined' && gameStarted) {
+            if (!timerRunning) {
+                startTime = Date.now();
+                timerRunning = true;
+                timerDiv.style.display = 'block';
+            }
+
+            // 計算並顯示時間
+            let elapsed = Date.now() - startTime;
+            let mins = Math.floor(elapsed / 60000).toString().padStart(2, '0');
+            let secs = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
+            let ms = Math.floor((elapsed % 1000) / 10).toString().padStart(2, '0');
+            
+            timerDiv.innerText = `${mins}:${secs}.${ms}`;
         } else {
-            overlay.style.display = 'none';
+            // 遊戲結束或未開始時隱藏
+            timerRunning = false;
+            timerDiv.style.display = 'none';
         }
-    }
+    };
 
-    // 4. 監聽旋轉與調整大小事件
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', () => {
-        setTimeout(checkOrientation, 200); // 延遲確保獲取正確的寬高
-    });
-
-    // 初始檢查
-    checkOrientation();
-
-    console.log("Hell-Gunner: Orientation Guard Active.");
+    console.log("計時器補丁已強制掛載：遊戲開始後會自動出現在右上角。");
 })();
-// --- 禁用縮放與預設手勢補丁 (Anti-Zoom & Gesture Lock Patch) ---
-(function lockViewport() {
-    // 1. 動態修改 Meta Viewport 標籤
-    // user-scalable=no 是關鍵，禁止用戶手動縮放
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-        meta = document.createElement('meta');
-        meta.name = 'viewport';
-        document.head.appendChild(meta);
+(function injectShotgunVariance() {
+    // 確保武器系統規格存在
+    const VARIANCE_WPN_ID = 2; // 散彈槍在你的 SPECS 中是 ID 2
+    
+    // 儲存原始的 fireShotgun 函數
+    const originalFireShotgun = window.fireShotgun;
+
+    window.fireShotgun = function() {
+        // 如果當前不是散彈槍，直接執行原始邏輯並返回
+        if (typeof player === 'undefined' || player.wepType !== VARIANCE_WPN_ID) {
+            return originalFireShotgun();
+        }
+
+        // 檢查冷卻與遊戲狀態 (複製原本的防護邏輯)
+        if (!gameStarted || player.shotTimer > 0) return;
+
+        // 取得散彈槍規格
+        // 注意：這裡假設 SPECS 是定義在閉包內的，
+        // 但因為我們在同一個作用域，可以直接定義我們要的隨機邏輯
+        const s = {
+            cd: 80,
+            baseRange: 250, // 原始距離
+            pellets: 6,
+            spread: 1.0,
+            dmg: 4,
+            color: '#ffaa00',
+            hit: 0.50
+        };
+
+        // 執行開槍基礎效果
+        player.shotTimer = s.cd;
+        player.shake = 18;
+        player.muzzleFlash = 10;
+        if (typeof playSound === 'function') playSound('shot');
+
+        // 核心修改：為每一顆子彈計算不同的距離
+        for (let i = 0; i < s.pellets; i++) {
+            let pAngle = player.angle + (Math.random() - 0.5) * s.spread;
+            
+            // --- 隨機距離邏輯 ---
+            // 讓距離在 60% 到 120% 之間隨機跳動
+            let randomRangeMult = 0.6 + Math.random() * 0.6; 
+            let individualRange = s.baseRange * randomRangeMult;
+            
+            let hitDist = individualRange;
+
+            // 碰撞檢測 (牆壁)
+            for (let d = 0; d < individualRange; d += 10) {
+                if (isInsideWall(player.x + Math.cos(pAngle) * d, player.y + Math.sin(pAngle) * d, 2)) {
+                    hitDist = d;
+                    break;
+                }
+            }
+
+            // 繪製彈道 (使用計算出的個體距離)
+            if (typeof tracers !== 'undefined') {
+                tracers.push({ 
+                    x: player.x, 
+                    y: player.y, 
+                    angle: pAngle, 
+                    len: hitDist, 
+                    life: 10, 
+                    color: s.color 
+                });
+            }
+
+            // 傷害判定
+            enemies.forEach(en => {
+                let dx = en.x - player.x, dy = en.y - player.y;
+                let distToEn = Math.hypot(dx, dy);
+                
+                // 只有在子彈當前的隨機射程內才會造成傷害
+                if (distToEn < hitDist) {
+                    let a = Math.atan2(dy, dx);
+                    if (Math.abs(((a - pAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI)) < s.hit) {
+                        en.hp -= s.dmg;
+                        en.kX = Math.cos(a) * 15;
+                        en.kY = Math.sin(a) * 15;
+                        if (typeof Particle !== 'undefined') {
+                            particles.push(new Particle(en.x, en.y, Math.cos(a) * 5, Math.sin(a) * 5, 15, 2, '#c00'));
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    console.log("散彈槍隨機射程補丁已啟用：彈群現在具有不規則的破碎邊緣。");
+})();
+(function injectBulletBlocking() {
+    const originalFire = window.fireShotgun;
+
+    window.fireShotgun = function() {
+        // 先執行原始邏輯取得當前武器規格
+        // 注意：我們需要重寫內部的偵測邏輯，所以我們直接在這裡處理核心運算
+        if (!gameStarted || player.shotTimer > 0) return;
+
+        // 武器參數定義（對應你現有的 SPECS）
+        const WEP_DEFS = {
+            1: { cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', hit: 0.22 },
+            2: { cd: 60, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', hit: 0.50 },
+            3: { cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', hPer: 6.0, hit: 0.20 }
+        };
+
+        const s = WEP_DEFS[player.wepType];
+        
+        // 步槍過熱檢查
+        if (player.wepType === 3 && player.isHot) return;
+        if (player.wepType === 3) {
+            player.heat += s.hPer;
+            if (player.heat >= 100) { player.heat = 100; player.isHot = true; player.shotTimer = 100; return; }
+        }
+
+        player.shotTimer = s.cd;
+        player.shake = (player.wepType === 2) ? 18 : 4;
+        player.muzzleFlash = 10;
+        if (typeof playSound === 'function') playSound('shot');
+
+        for (let i = 0; i < s.pellets; i++) {
+            let pAngle = player.angle + (Math.random() - 0.5) * (s.spread || 0);
+            
+            // 隨機距離 (沿用你之前的距離不一功能)
+            let individualMaxRange = (player.wepType === 2) ? s.range * (0.6 + Math.random() * 0.6) : s.range;
+            
+            let hitDist = individualMaxRange;
+            let targetHit = null;
+
+            // --- 核心改動：射線步進偵測牆壁與怪物 ---
+            // 每 8 像素檢查一次路徑
+            for (let d = 0; d < individualMaxRange; d += 8) {
+                let currX = player.x + Math.cos(pAngle) * d;
+                let currY = player.y + Math.sin(pAngle) * d;
+
+                // 1. 檢查牆壁阻擋
+                if (isInsideWall(currX, currY, 2)) {
+                    hitDist = d;
+                    break;
+                }
+
+                // 2. 檢查怪物阻擋 (不會穿過怪物)
+                let hitEnemy = enemies.find(en => {
+                    let distToPoint = Math.hypot(en.x - currX, en.y - currY);
+                    return distToPoint < en.size; // 如果點落在怪物圓形碰撞區內
+                });
+
+                if (hitEnemy) {
+                    hitDist = d;
+                    targetHit = hitEnemy; // 標記被這顆子彈打中的第一個怪物
+                    break; 
+                }
+            }
+
+            // 繪製彈道
+            tracers.push({ 
+                x: player.x, 
+                y: player.y, 
+                angle: pAngle, 
+                len: hitDist, 
+                life: 10, 
+                color: s.color 
+            });
+
+            // 處理傷害
+            if (targetHit) {
+                targetHit.hp -= s.dmg;
+                let pushAng = Math.atan2(targetHit.y - player.y, targetHit.x - player.x);
+                targetHit.kX = Math.cos(pushAng) * (s.pellets > 1 ? 15 : 6);
+                targetHit.kY = Math.sin(pushAng) * (s.pellets > 1 ? 15 : 6);
+                
+                // 產生血花特效
+                if (typeof Particle !== 'undefined') {
+                    particles.push(new Particle(targetHit.x, targetHit.y, Math.cos(pushAng)*5, Math.sin(pushAng)*5, 15, 2, '#c00'));
+                }
+            }
+        }
+    };
+
+    console.log("子彈阻擋系統已啟用：子彈現在會停在命中的第一個目標上。");
+})();
+// --- 戰術閃避補丁 (Tactical Roll Patch) ---
+(function injectDodgeRoll() {
+    // 1. 初始化翻滾相關屬性
+    if (typeof player !== 'undefined') {
+        player.isRolling = false;
+        player.rollTimer = 0;
+        player.rollCooldown = 0;
+        player.rollAngle = 0;
     }
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
 
-    // 2. 攔截雙擊縮放 (Double-tap to zoom)
-    // 許多行動瀏覽器在 300ms 內點擊兩次會放大的預設行為
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-        const now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
-            e.preventDefault();
+    const ROLL_DURATION = 15; // 翻滾持續幀數 (約 0.25秒)
+    const ROLL_SPEED = 12;    // 翻滾速度 (一般移動速度是 4.8)
+    const ROLL_CD_TIME = 50;  // 冷卻時間 (約 0.75秒)
+
+    // 2. 監聽空白鍵
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Space' && gameStarted && !player.isRolling && player.rollCooldown <= 0) {
+            startRoll();
         }
-        lastTouchEnd = now;
-    }, false);
-
-    // 3. 攔截多指縮放 (Pinch-to-zoom)
-    document.addEventListener('touchstart', (e) => {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-
-    // 4. 攔截手勢事件 (Safari 專用)
-    document.addEventListener('gesturestart', (e) => {
-        e.preventDefault();
     });
 
-    // 5. 防止長按選取文字或彈出選單
-    const style = document.createElement('style');
-    style.innerHTML = `
-        * {
-            -webkit-touch-callout: none; /* 禁用長按選單 */
-            -webkit-user-select: none;   /* 禁用選取文字 */
-            user-select: none;
-            touch-action: none;          /* 核心：交由 JS 完全控制觸控行為 */
+    function startRoll() {
+        player.isRolling = true;
+        player.rollTimer = ROLL_DURATION;
+        player.rollCooldown = ROLL_CD_TIME;
+
+        // 決定翻滾方向：如果有按住 WASD 則往移動方向翻，否則往滑鼠方向翻
+        let dx = 0, dy = 0;
+        if (keys['KeyW']) dy -= 1; if (keys['KeyS']) dy += 1;
+        if (keys['KeyA']) dx -= 1; if (keys['KeyD']) dx += 1;
+
+        if (dx === 0 && dy === 0) {
+            player.rollAngle = player.angle; // 往準心方向
+        } else {
+            player.rollAngle = Math.atan2(dy, dx); // 往移動方向
         }
+
+        // 視覺特效：啟動煙塵
+        for(let i=0; i<8; i++) {
+            particles.push(new Particle(player.x, player.y, (Math.random()-0.5)*5, (Math.random()-0.5)*5, 20, 4, '#444'));
+        }
+    }
+
+    // 3. 注入 Update 邏輯
+    const baseUpdate = window.update;
+    window.update = function() {
+        if (!gameStarted) return baseUpdate();
+
+        if (player.isRolling) {
+            // 翻滾中位移
+            let vx = Math.cos(player.rollAngle) * ROLL_SPEED;
+            let vy = Math.sin(player.rollAngle) * ROLL_SPEED;
+
+            if (!isInsideWall(player.x + vx, player.y, player.size)) player.x += vx;
+            if (!isInsideWall(player.x, player.y + vy, player.size)) player.y += vy;
+
+            player.rollTimer--;
+            if (player.rollTimer <= 0) player.isRolling = false;
+        }
+
+        if (player.rollCooldown > 0) player.rollCooldown--;
+
+        baseUpdate();
+    };
+
+    // 4. 注入無敵幀邏輯 (修改敵人的攻擊檢查)
+    const baseDraw = window.draw;
+    window.draw = function() {
+        // 在繪製前暫時修改玩家 HP 判定，如果正在翻滾，讓敵人 biteTimer 持續重置
+        if (player.isRolling) {
+            enemies.forEach(en => {
+                if (Math.hypot(player.x - en.x, player.y - en.y) < en.size + player.size) {
+                    en.biteTimer = 10; // 只要我在翻滾，怪物碰到我就會被重置攻擊冷卻，無法造成傷害
+                }
+            });
+            
+            // 翻滾視覺效果：殘影或透明
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            // 這裡是為了讓原本的 draw 執行時玩家看起來是半透明的
+            // 但因為 draw 裡面是直接畫 player，最簡單的做法是在這裡加一個藍色殘影
+            ctx.translate(-camera.x, -camera.y);
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.3)';
+            ctx.beginPath(); ctx.arc(player.x - Math.cos(player.rollAngle)*10, player.y - Math.sin(player.rollAngle)*10, 15, 0, 6.28); ctx.fill();
+            ctx.restore();
+        }
+
+        baseDraw();
+    };
+
+    console.log("戰術翻滾補丁已載入：按 [Space] 進行無敵翻滾。");
+})();
+// --- 戰術翻滾冷卻 UI 補丁 (Stamina Bar Patch) ---
+(function injectRollCooldownUI() {
+    // 1. 確保 UI 容器存在
+    const hpUIBox = document.querySelector('.ui-box'); // 取得第一個 UI 區塊 (生命特徵)
+    if (!hpUIBox) return;
+
+    // 2. 創建並插入 Stamina UI 元素
+    const staminaBox = document.createElement('div');
+    staminaBox.className = 'ui-box';
+    staminaBox.style.marginTop = "10px";
+    staminaBox.innerHTML = `
+        <div class="label" id="stamina-label">戰術迴避冷卻 (STAMINA)</div>
+        <div class="reload-bar-bg" style="height: 8px; background: #051105; border-color: #052205;">
+            <div id="stamina-fill" style="height: 100%; width: 100%; background: #00ff44; box-shadow: 0 0 10px #00ff44; transition: width 0.1s;"></div>
+        </div>
     `;
-    document.head.appendChild(style);
+    // 將其插入到 HP 條之後
+    hpUIBox.parentNode.insertBefore(staminaBox, hpUIBox.nextSibling);
 
-    console.log("Hell-Gunner: Viewport Locked. Anti-zoom active.");
+    const staminaFill = document.getElementById('stamina-fill');
+    const staminaLabel = document.getElementById('stamina-label');
+
+    // 3. 注入 Update 邏輯以更新 UI
+    const originalUpdate = window.update;
+    window.update = function() {
+        if (originalUpdate) originalUpdate();
+
+        if (typeof player !== 'undefined' && typeof gameStarted !== 'undefined' && gameStarted) {
+            // 計算冷卻百分比 (rollCooldown 為 0 時代表 100% 能量)
+            const maxCD = 20; // 對應你補丁中的 ROLL_CD_TIME
+            let cooldownLeft = player.rollCooldown || 0;
+            let energyPercent = Math.max(0, 100 - (cooldownLeft / maxCD * 100));
+
+            // 更新進度條長度
+            staminaFill.style.width = energyPercent + "%";
+
+            // 視覺回饋：冷卻中為灰色，全滿時閃爍綠光
+            if (cooldownLeft > 0) {
+                staminaFill.style.background = "#444";
+                staminaFill.style.boxShadow = "none";
+                staminaLabel.style.color = "#444";
+                staminaLabel.innerText = "正在恢復 (RECHARGING...)";
+            } else {
+                staminaFill.style.background = "#00ff44";
+                staminaFill.style.boxShadow = "0 0 10px #00ff44";
+                staminaLabel.style.color = "#00ff44";
+                staminaLabel.innerText = "戰術能量 (READY)";
+                
+                // 翻滾瞬間的視覺補強 (如果正在翻滾)
+                if (player.isRolling) {
+                    staminaFill.style.background = "#fff";
+                }
+            }
+        }
+    };
+
+    console.log("翻滾冷卻計量條補丁已載入。");
 })();
+function setupVirtualJoystick() {
+    // 建立搖桿容器
+    const joystickContainer = document.createElement('div');
+    joystickContainer.id = 'mobile-joystick';
+    joystickContainer.style = 'position:fixed; bottom:50px; left:50px; width:150px; height:150px; z-index:1000;';
+    document.body.appendChild(joystickContainer);
+
+    // 這裡假設你使用了 nipplejs 庫
+    const manager = nipplejs.create({
+        zone: joystickContainer,
+        mode: 'static',
+        position: { left: '75px', bottom: '75px' },
+        color: 'white'
+    });
+
+    manager.on('move', (evt, data) => {
+        // 將搖桿數據映射到遊戲的原始控制函數
+        if (data.direction) {
+            const force = data.force;
+            const angle = data.angle.degree;
+            // 呼叫原本遊戲的移動邏輯 (例如：game.player.move(angle, force))
+            injectPlayerMovement(angle, force);
+        }
+    });
+
+    manager.on('end', () => {
+        stopPlayerMovement();
+    });
+}
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
