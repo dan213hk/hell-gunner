@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hell-Gunner</title>
     <style>
+    html {
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
 /* 開始選單專用樣式 */
 #start-menu {
     position: absolute;
@@ -129,11 +134,18 @@
             }
         }
         @media screen and (max-width: 1024px) {
+            #game-container {
+                flex-direction: row;
+            }
             #sidebar {
                 width: 25vw;
                 min-width: 100px;
                 max-width: 200px;
                 padding: 1vw;
+                order: 2;
+            }
+            canvas {
+                order: 1;
             }
             .label { font-size: 1vw; letter-spacing: 1px; }
             .value { font-size: 1.8vw; }
@@ -141,11 +153,18 @@
             .controls { font-size: 0.9vw; }
         }
         @media screen and (max-width: 768px) {
+            #game-container {
+                flex-direction: row;
+            }
             #sidebar {
                 width: 30vw;
                 min-width: 80px;
                 max-width: 150px;
                 padding: 0.8vw;
+                order: 2;
+            }
+            canvas {
+                order: 1;
             }
             .label { font-size: 1.2vw; letter-spacing: 0.5px; }
             .value { font-size: 2vw; }
