@@ -48,7 +48,6 @@
         body {
           margin: 0; background: #000; color: #ff0000;
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-            display: flex; justify-content: center; align-items: center;
             height: 100vh; overflow: hidden;
             user-select: none; /* 禁用文字選取 */
             -webkit-user-select: none; /* Chrome/Safari */
@@ -57,13 +56,13 @@
             cursor: crosshair !important;
             touch-action: none; /* 禁用觸控手勢 */
         }
-        #game-container { display: flex; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; }
-        canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; }
-        #sidebar { width: 20vw; min-width: 200px; max-width: 350px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; }
-        .ui-box { width: 100%; margin-bottom: 2vh; }
-        .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; }
+        #game-container { display: flex; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
+        canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; }
+        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow-x: hidden; overflow-y: auto; }
+        .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
+        .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
-        #radar-container { width: 80%; height: 15vh; border: 2px solid #4a0000; background: #030303; margin: 1vh auto; position: relative; overflow: hidden; }
+        #radar-container { width: 80%; height: 15vh; border: 2px solid #4a0000; background: #030303; margin: 1vh auto; position: relative; overflow: hidden; flex-shrink: 0; }
         #radarCanvas { width: 100%; height: 100%; }
         #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 0.6vw; opacity: 0; transition: 0.5s; pointer-events: none; }
         .hp-bar-bg { width: 100%; height: 1vh; background: #200; border: 1px solid #700; margin-top: 0.8vh; }
@@ -72,7 +71,7 @@
         #reload-fill { height: 100%; background: #00ccff; width: 0%; box-shadow: 0 0 10px #00ccff; }
         #grenade-fill { height: 100%; background: #ff6600; box-shadow: 0 0 10px #ff6600; }
         .task-list { font-size: 1vw; color: #00ffaa; margin-top: 0.8vh; font-weight: bold; }
-        .controls { font-size: 0.7vw; color: #666; margin-top: auto; line-height: 1.6; }
+        .controls { font-size: 0.7vw; color: #666; margin-top: auto; line-height: 1.6; flex-shrink: 0; overflow-y: auto; word-wrap: break-word; overflow-wrap: break-word; }
         * { cursor: crosshair !important; }
         #death-menu {
             position: fixed;
@@ -96,21 +95,9 @@
             color: #f00;
             font-weight: bold;
         }
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000;
-        }
         #gameCanvas {
-            width: 1000px;
-            height: 750px;
-            max-width: 100%;
-            max-height: 100vh;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
         }
         #portrait-warning {
             display: none;
@@ -140,6 +127,30 @@
             #portrait-warning {
                 display: flex;
             }
+        }
+        @media screen and (max-width: 1024px) {
+            #sidebar {
+                width: 25vw;
+                min-width: 100px;
+                max-width: 200px;
+                padding: 1vw;
+            }
+            .label { font-size: 1vw; letter-spacing: 1px; }
+            .value { font-size: 1.8vw; }
+            .task-list { font-size: 1.2vw; }
+            .controls { font-size: 0.9vw; }
+        }
+        @media screen and (max-width: 768px) {
+            #sidebar {
+                width: 30vw;
+                min-width: 80px;
+                max-width: 150px;
+                padding: 0.8vw;
+            }
+            .label { font-size: 1.2vw; letter-spacing: 0.5px; }
+            .value { font-size: 2vw; }
+            .task-list { font-size: 1.5vw; }
+            .controls { font-size: 1.1vw; }
         }
     </style>
 </head>
@@ -3683,23 +3694,37 @@ function setupVirtualJoystick() {
 
 function updateGameScale() {
     const container = document.getElementById('game-container');
-    const targetW = 1200; // 你的基準寬度
-    const targetH = 700;  // 你的基準高度
     
     const screenW = window.innerWidth;
     const screenH = window.innerHeight;
     
+    // 動態計算目標尺寸，根據屏幕大小調整
+    let targetW, targetH;
+    
+    if (screenW < 768) {
+        // 小屏幕（手机）
+        targetW = screenW * 0.95;
+        targetH = screenH * 0.95;
+    } else if (screenW < 1024) {
+        // 中等屏幕（平板）
+        targetW = screenW * 0.9;
+        targetH = screenH * 0.9;
+    } else {
+        // 大屏幕（桌面）
+        targetW = 1200;
+        targetH = 700;
+    }
+    
     // 計算縮放比例
     const scale = Math.min(screenW / targetW, screenH / targetH);
     
-    container.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    container.style.left = '50%';
-    container.style.top = '50%';
-    container.style.position = 'absolute';
+    container.style.transform = `scale(${scale})`;
+    container.style.transformOrigin = 'top left';
+    container.style.position = 'fixed';
+    container.style.left = '0';
+    container.style.top = '0';
 }
 
-window.addEventListener('resize', updateGameScale);
-updateGameScale();
 
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
