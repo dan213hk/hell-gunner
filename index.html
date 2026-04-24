@@ -2078,50 +2078,64 @@ function updateGameScale() {
 
 window.addEventListener('resize', updateGameScale);
 updateGameScale();
-const mobileLayoutPatch = document.createElement('style');
-mobileLayoutPatch.innerHTML = `
-    @media screen and (max-width: 1024px) {
-        /* 隱藏原始側邊欄背景，改為容器模式 */
-        #sidebar {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            background: none !important;
-            pointer-events: none; /* 讓點擊穿透到遊戲層 */
-            display: flex !important;
-            justify-content: space-between !important;
-            padding: 20px !important;
-            box-sizing: border-box !important;
-            z-index: 1000 !important;
-        }
 
-        /* 側邊欄內的子組件（例如狀態資訊、按鈕） */
-        #sidebar > .status-group { 
-            order: 1; 
-            align-self: flex-start; /* 靠左上 */
-            pointer-events: auto; 
-        }
-        
-        #sidebar > .inventory-group { 
-            order: 2; 
-            align-self: flex-end; /* 靠右下 */
-            pointer-events: auto; 
-        }
+<div id="game-container">...</div>
+<div id="sidebar">...</div>
+<script src="game-core.js"></script>
 
-        /* 雷達專屬補丁：固定在左上角，避開左手搖桿 */
-        #radar-display, .radar-container {
-            position: absolute !important;
-            top: 15px !important;
-            left: 15px !important;
-            z-index: 1001 !important;
-            width: 100px !important;
-            height: 100px !important;
-            display: block !important;
-        }
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. 檢測是否為手機
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 1024;
+
+    if (isMobile) {
+        console.log("移動端補丁已啟動...");
+        applyMobileLayout(); // 執行側邊欄左右分佈
+        injectJoystick();   // 注入搖桿
+        fixResolution();    // 修正解析度
     }
-`;
+
+    function applyMobileLayout() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @media screen and (max-width: 1024px) {
+                /* 側邊欄變為透明容器，橫跨全螢幕 */
+                #sidebar {
+                    position: fixed !important;
+                    top: 0; left: 0;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    background: transparent !important;
+                    display: flex !important;
+                    justify-content: space-between !important; /* 左右分佈關鍵 */
+                    align-items: flex-end !important; /* 對齊到下方 */
+                    pointer-events: none; 
+                    z-index: 2000;
+                }
+
+                /* 側邊欄內的子元素恢復點擊 */
+                #sidebar > div, #sidebar > ul {
+                    pointer-events: auto;
+                    margin: 20px;
+                    background: rgba(0,0,0,0.5); /* 給 UI 一點底色 */
+                    padding: 10px;
+                    border-radius: 8px;
+                }
+
+                /* 雷達強制鎖定左上 */
+                #radar-display {
+                    position: absolute !important;
+                    top: 10px !important;
+                    left: 10px !important;
+                    bottom: auto !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+});
+</script>
+    
 document.head.appendChild(mobileLayoutPatch);
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
