@@ -135,10 +135,10 @@
         }
         @media screen and (orientation: portrait) {
             #portrait-warning {
-                display: flex;
+                display: none;
             }
             #game-container {
-                display: none;
+                display: flex;
             }
             #start-menu, #death-menu {
                 display: none;
@@ -196,8 +196,7 @@
 <div class="controls">
     <div class="label" style="margin-bottom: 5px;">戰術簡報 (INTELLIGENCE)</div>
     ● 進行血祭（收集 3 個五芒星）以開啟傳送門。<br>
-    ● 按 *WASD* 移動，*滑鼠左鍵* 射擊 *Space* 戰術迴避<br>
-    ● 選擇武器 按 1) 手槍 2) 散彈槍 3) 輕機槍 右鍵使用手榴彈<br>
+    ● 按 *WASD* 移動，*滑鼠左鍵* 射擊 *Space* 戰術迴避 *E* 手榴彈<br>
     <div class="label" style="margin-bottom: 5px;">威脅評估 (THREAT LOG)</div>
     <span style="color: #ffff00;">● 迅捷者 (Yellow Eye):</span> 體型小、移速極快，群體出沒時極其危險。抗擊退力弱。<br>
     <span style="color: #ff0000;">● 漫遊屍 (Red Eye):</span> 標準型惡魔，體力與速度均衡。最常見的威脅。<br>
@@ -787,9 +786,9 @@ const WORLD = { width: 3200, height: 2400 };
 
 let startPos = { x: 400, y: 350 }; // 初始第一關的地點
 let level = 1;
-let player = { x: 0, y: 0, size: 18, speed: 4.8, hp: 100, angle: 0, shotTimer: 0, muzzleFlash: 0, hitFlash: 0, shake: 0, grenadeCooldown: 0, isDead: false };
+let player = { x: 0, y: 0, size: 18, speed: 4.8, hp: 100, angle: 0, shotTimer: 0, muzzleFlash: 0, hitFlash: 0, shake: 0, grenadeCooldown: 0, isDead: false, deathTimer: 0, deathAngle: 0 };
 const SHOT_COOLDOWN = 85;
-const GRENADE_COOLDOWN = 180; // 手榴彈冷卻時間（幀數，約3秒） 
+const GRENADE_COOLDOWN = 300; // 手榴彈冷卻時間（幀數，約5秒） 
 const BASE_SHOT_RANGE = 260; // 稍微增加一點射程感
 const PELLET_COUNT = 6;
 
@@ -865,6 +864,7 @@ function getRandomEmptyPos(padding = 50) {
 
 // --- 手榴彈系統 ---
 function throwGrenade() {
+    if (player.isDead) return; // 死亡時不能投擲
     // 檢查冷卻
     if (player.grenadeCooldown > 0) return;
 
@@ -1067,6 +1067,7 @@ function explodeGrenade(grenade) {
 
 // --- 強化後的散彈槍特效邏輯 ---
 function fireShotgun() {
+    if (player.isDead) return; // 死亡時不能射擊
     if (player.shotTimer <= 0) {
         player.shotTimer = SHOT_COOLDOWN;
         player.shake = 18;
@@ -1150,8 +1151,8 @@ if (en.hp <= 0) {
     // 播放怪物死亡音效
     playSound('enemy_death');
 
-    // 10%機率掉落回血道具
-    if (Math.random() < 0.10) {
+    // 20%機率掉落回血道具
+    if (Math.random() < 0.20) {
         healthItems.push({
             x: en.x,
             y: en.y,
@@ -1231,6 +1232,8 @@ function initLevel() {
 function update() {
     if (player.hp <= 0 && !player.isDead) {
         player.isDead = true;
+        player.deathTimer = 180; // 3秒死亡動畫
+        player.deathAngle = 0; // 初始角度
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
@@ -1245,10 +1248,38 @@ function update() {
                     deathLevel.textContent = level;
                 }
             }
-        }, 1200);
+        }, 1500);
         return;
     }
-    if (player.isDead) return; // 如果已死亡，直接返回
+    
+    // 處理死亡動畫
+    if (player.isDead) {
+        player.deathTimer--;
+        // 更真實的倒下動畫：先傾斜再倒下
+        if (player.deathTimer > 120) {
+            // 第一階段：傾斜
+            player.deathAngle += 0.03;
+        } else if (player.deathTimer > 60) {
+            // 第二階段：倒下
+            player.deathAngle += 0.08;
+        } else {
+            // 第三階段：完全倒下
+            player.deathAngle = Math.PI / 2;
+        }
+        
+        if (player.deathTimer <= 0) {
+            // 動畫結束，顯示死亡菜單
+            const deathMenu = document.getElementById('death-menu');
+            if (deathMenu && deathMenu.style.display !== 'flex') {
+                deathMenu.style.display = 'flex';
+                const deathLevel = document.getElementById('death-level');
+                if (deathLevel) {
+                    deathLevel.textContent = level;
+                }
+            }
+        }
+        return; // 死亡時不能移動
+    }
     let dx = 0, dy = 0;
     if (keys['KeyW']) dy -= player.speed; if (keys['KeyS']) dy += player.speed;
     if (keys['KeyA']) dx -= player.speed; if (keys['KeyD']) dx += player.speed;
@@ -1383,19 +1414,24 @@ healthItems.forEach(h => {
         // 視覺回饋
         player.hitFlash = 10;
 
-        // 浮動文字特效
-        for(let i=0; i<5; i++) {
+        // 播放拾取音效
+        playSound('pickup');
+
+        // 添加拾取粒子效果
+        for(let i = 0; i < 15; i++) {
+            let angle = (Math.PI * 2 / 15) * i;
+            let speed = 3 + Math.random() * 2;
             particles.push(new Particle(
-                player.x, player.y,
-                (Math.random()-0.5)*4, (Math.random()-0.5)*4,
-                30, 4, '#ff0000' // 紅色粒子區分回血道具
+                h.x, h.y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                30, 4, '#0f0'
             ));
         }
 
         updateUI();
-        playSound('pickup');
     }
-    });
+});
 
 // 清理已收集的healthItems
 healthItems = healthItems.filter(h => !h.collected);
@@ -1413,8 +1449,8 @@ healthItems = healthItems.filter(h => !h.collected);
         if (en.hp <= 0) {
             playSound('enemy_death'); // 播放怪物死亡音效
 
-            // 5%機率掉落回血道具
-            if (Math.random() < 0.05) {
+            // 20%機率掉落回血道具
+            if (Math.random() < 0.20) {
                 healthItems.push({
                     x: en.x,
                     y: en.y,
@@ -2190,6 +2226,20 @@ if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityR
     });
 
     ctx.save(); ctx.translate(player.x, player.y);
+    
+    // 死亡倒下動畫
+    if (player.isDead) {
+        ctx.rotate(player.deathAngle); // 旋轉倒下
+        ctx.globalAlpha = Math.max(0, player.deathTimer / 180); // 逐漸消失
+        
+        // 添加縮放效果，讓倒下更真實
+        let deathScale = 1;
+        if (player.deathTimer < 120) {
+            deathScale = 0.8 + (player.deathTimer / 120) * 0.2; // 逐漸變扁
+        }
+        ctx.scale(deathScale, deathScale);
+    }
+    
     // 根據左右方向翻轉，不旋轉
     if (player.angle > Math.PI / 2 || player.angle < -Math.PI / 2) {
         ctx.scale(-1, 1); // 向左時水平翻轉
@@ -2494,6 +2544,11 @@ window.addEventListener('mousemove', e => {
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
 
+    // E鍵投擲手榴彈
+    if (e.code === 'KeyE' && gameStarted) {
+        throwGrenade();
+    }
+
     // F鍵切換全畫面
     if (e.code === 'KeyF') {
         if (!document.fullscreenElement) {
@@ -2522,7 +2577,6 @@ window.addEventListener('mousedown', e => {
         fireShotgun();
     } else if (gameStarted && e.button === 2) {
         e.preventDefault(); // 防止右鍵選單
-        throwGrenade();
     }
 });
 
@@ -3224,7 +3278,7 @@ function restartGame() {
 
     // 4. 完整射擊系統 (整合三個補丁的邏輯 + 增強視覺效果)
     window.fireShotgun = function() {
-        if (!ensureVars() || !gameStarted || player.weaponTimers[player.wepType] > 0 || player.isRolling) return;
+        if (!ensureVars() || !gameStarted || player.weaponTimers[player.wepType] > 0 || player.isRolling || player.isDead) return;
         
         const s = SPECS[player.wepType];
 
@@ -3471,6 +3525,7 @@ function restartGame() {
     });
 
     function startRoll() {
+        if (player.isDead) return; // 死亡時不能翻滾
         player.isRolling = true;
         player.rollTimer = ROLL_DURATION;
         player.rollCooldown = ROLL_CD_TIME;
