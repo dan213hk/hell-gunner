@@ -2058,6 +2058,77 @@ function setupVirtualJoystick() {
         stopPlayerMovement();
     });
 }
+// 在補丁中加入這段 CSS
+const style = document.createElement('style');
+style.innerHTML = `
+    /* 強制橫屏容器 */
+    #game-wrapper {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* 雷達補丁：確保它永遠在最上層 */
+    #radar-canvas, .game-radar { 
+        position: absolute !important;
+        top: 10px !important;
+        left: 10px !important;
+        z-index: 9999 !important;
+        display: block !important;
+        visibility: visible !important;
+        width: 120px; /* 根據需求調整 */
+        height: 120px;
+        background: rgba(0, 0, 0, 0.3); /* 增加底色觀察位置 */
+        border: 1px solid #0f0;
+    }
+`;
+document.head.appendChild(style);
+function setupRightJoystick() {
+    const rightJoystick = nipplejs.create({
+        zone: document.getElementById('right-joystick-container'),
+        mode: 'static',
+        position: { right: '80px', bottom: '80px' },
+        color: 'red'
+    });
+
+    rightJoystick.on('move', (evt, data) => {
+        if (data.angle) {
+            // 注意：nipplejs 的 0 度是在右邊（正東），
+            // 你的遊戲引擎（如 Phaser 或 Pixi）可能 0 度在上方或下方。
+            // 這裡需要做角度轉換：
+            const angleInRadians = data.angle.radian; 
+            
+            // 核心補丁：直接修改遊戲對象的旋轉
+            // 假設玩家對象是 window.gamePlayer
+            if (window.gamePlayer) {
+                window.gamePlayer.rotation = angleInRadians;
+                
+                // 如果是像 Hell-Gunner 這種需要 update 槍口座標的：
+                updateGunMuzzle(angleInRadians);
+            }
+        }
+    });
+}
+function updateGameScale() {
+    const container = document.getElementById('game-container');
+    const targetW = 1700; // 你的基準寬度
+    const targetH = 800;  // 你的基準高度
+    
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    
+    // 計算縮放比例
+    const scale = Math.min(screenW / targetW, screenH / targetH);
+    
+    container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    container.style.left = '50%';
+    container.style.top = '50%';
+    container.style.position = 'absolute';
+}
+
+window.addEventListener('resize', updateGameScale);
+updateGameScale();
 // 移除原本最底部的 loop(); 呼叫
 // 只保留 initLevel(); 讓背景地圖先生成
 initLevel(); 
