@@ -60,6 +60,7 @@
             -ms-user-select: none; /* IE/Edge */
             cursor: crosshair !important;
             touch-action: none; /* 禁用觸控手勢 */
+            touch-action: manipulation; /* 禁用雙擊放大 */
         }
         #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
         canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; }
@@ -237,7 +238,6 @@
             right: 10px;
             bottom: 60px;
             z-index: 1001;
-            display: flex;
             flex-direction: column;
             gap: 10px;
         }
@@ -1435,7 +1435,11 @@ function update() {
 
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size) && canMoveX) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size) && canMoveY) player.y += dy;
-    player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    // Only update angle from mouse on desktop, not on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) {
+        player.angle = Math.atan2(mousePos.y - (player.y - camera.y), mousePos.x - (player.x - camera.x));
+    }
     // 保持向後兼容：如果沒有獨立計時器，使用原本的shotTimer
     if (player.weaponTimers) {
         // 新的獨立計時器系統由weaponSystemUpdate處理
