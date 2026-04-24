@@ -61,9 +61,9 @@
             cursor: crosshair !important;
             touch-action: none; /* 禁用觸控手勢 */
         }
-        #game-container { display: flex; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
-        canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; }
-        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow-x: hidden; overflow-y: auto; }
+        #game-container { display: flex; flex-direction: row; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
+        canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; }
+        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow-x: hidden; overflow-y: auto; order: 2; }
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
         .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
@@ -3709,39 +3709,6 @@ function setupVirtualJoystick() {
     manager.on('end', () => {
         stopPlayerMovement();
     });
-}
-
-function updateGameScale() {
-    const container = document.getElementById('game-container');
-    
-    const screenW = window.innerWidth;
-    const screenH = window.innerHeight;
-    
-    // 動態計算目標尺寸，根據屏幕大小調整
-    let targetW, targetH;
-    
-    if (screenW < 768) {
-        // 小屏幕（手机）
-        targetW = screenW * 0.95;
-        targetH = screenH * 0.95;
-    } else if (screenW < 1024) {
-        // 中等屏幕（平板）
-        targetW = screenW * 0.9;
-        targetH = screenH * 0.9;
-    } else {
-        // 大屏幕（桌面）
-        targetW = 1200;
-        targetH = 700;
-    }
-    
-    // 計算縮放比例
-    const scale = Math.min(screenW / targetW, screenH / targetH);
-    
-    container.style.transform = `scale(${scale})`;
-    container.style.transformOrigin = 'top left';
-    container.style.position = 'fixed';
-    container.style.left = '0';
-    container.style.top = '0';
 }
 
 
