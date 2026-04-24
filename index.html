@@ -156,13 +156,35 @@
             .controls { font-size: 0.9vw; }
         }
         @media screen and (max-width: 768px) {
-            #game-container {
-                position: relative;
+            html, body {
+                overflow: hidden;
                 width: 100vw;
                 height: 100vh;
             }
+            #game-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+            }
             #sidebar {
                 display: none;
+            }
+            #radar-container {
+                position: fixed;
+                right: 10px;
+                top: 10px;
+                width: 100px;
+                height: 75px;
+                z-index: 1000;
+                background: rgba(0, 8, 0, 0.8);
+                border: 2px solid rgba(0, 255, 100, 0.3);
+            }
+            #radarCanvas {
+                width: 100%;
+                height: 100%;
             }
             #mobile-status-bar {
                 display: flex;
@@ -186,8 +208,7 @@
             }
             canvas {
                 width: 100%;
-                height: 100%;
-                object-fit: contain;
+                height: calc(100vh - 30px);
             }
         }
         #mobile-status-bar {
@@ -1416,6 +1437,23 @@ function update() {
 
     if (dx !== 0 && !isInsideWall(player.x + dx, player.y, player.size) && canMoveX) player.x += dx;
     if (dy !== 0 && !isInsideWall(player.x, player.y + dy, player.size) && canMoveY) player.y += dy;
+    
+    // Additional collision check to prevent clipping through walls
+    if (isInsideWall(player.x, player.y, player.size)) {
+        // Player is inside a wall, push them out
+        let bestX = player.x - dx;
+        let bestY = player.y - dy;
+        if (!isInsideWall(bestX, player.y, player.size)) {
+            player.x = bestX;
+        } else if (!isInsideWall(player.x, bestY, player.size)) {
+            player.y = bestY;
+        } else {
+            // Push back to previous position
+            player.x -= dx;
+            player.y -= dy;
+        }
+    }
+    
     // Only update angle from mouse on desktop, not on mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) {
@@ -2636,14 +2674,23 @@ lastRadarSnapshot.collectibles.forEach(c => {
 }
 
 function updateUI() {
-    document.getElementById('hp-fill').style.width = player.hp + "%";
-    document.getElementById('hp-ui').innerText = Math.max(0, Math.ceil(player.hp)) + "%";
-    document.getElementById('lvl-ui').innerText = `地獄層數: ${level}`;
-    let collCount = collectibles.filter(c=>c.collected).length;
-    document.getElementById('task-ui').innerText = `儀式數目: ${collCount} / 3`;
-    document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
+    // Desktop sidebar updates
+    const hpFill = document.getElementById('hp-fill');
+    const hpUi = document.getElementById('hp-ui');
+    const lvlUi = document.getElementById('lvl-ui');
+    const taskUi = document.getElementById('task-ui');
     
-    // Update mobile status bar
+    if (hpFill) hpFill.style.width = player.hp + "%";
+    if (hpUi) hpUi.innerText = Math.max(0, Math.ceil(player.hp)) + "%";
+    if (lvlUi) lvlUi.innerText = `地獄層數: ${level}`;
+    
+    let collCount = collectibles.filter(c=>c.collected).length;
+    if (taskUi) {
+        taskUi.innerText = `儀式數目: ${collCount} / 3`;
+        taskUi.style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
+    }
+    
+    // Mobile status bar updates
     const mobileHp = document.getElementById('mobile-hp');
     const mobileLevel = document.getElementById('mobile-level');
     const mobileTask = document.getElementById('mobile-task');
