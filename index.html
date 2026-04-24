@@ -61,7 +61,7 @@
             cursor: crosshair !important;
             touch-action: none; /* 禁用觸控手勢 */
         }
-        #game-container { display: flex; flex-direction: row; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
+        #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: 100vh; }
         canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; }
         #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow-x: hidden; overflow-y: auto; order: 2; }
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
@@ -103,6 +103,8 @@
         #gameCanvas {
             width: 100%;
             height: 100%;
+            flex: 1;
+            order: 1;
         }
         #portrait-warning {
             display: none;
@@ -154,17 +156,22 @@
         }
         @media screen and (max-width: 768px) {
             #game-container {
-                flex-direction: row;
+                position: relative;
             }
             #sidebar {
-                width: 30vw;
-                min-width: 80px;
-                max-width: 150px;
-                padding: 0.8vw;
-                order: 2;
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: 25vw;
+                min-width: 60px;
+                max-width: 120px;
+                padding: 0.5vw;
+                height: 100%;
+                z-index: 10;
             }
             canvas {
-                order: 1;
+                width: 100%;
+                height: 100%;
             }
             .label { font-size: 1.2vw; letter-spacing: 0.5px; }
             .value { font-size: 2vw; }
@@ -3247,11 +3254,7 @@ function restartGame() {
     });
 
     // 5. 視覺優化：隱藏側邊欄以增加手機視野
-    document.getElementById('sidebar').style.position = 'fixed';
-    document.getElementById('sidebar').style.bottom = '0';
-    document.getElementById('sidebar').style.opacity = '0.7';
-    document.getElementById('sidebar').style.height = '60px';
-    document.getElementById('sidebar').style.width = '100vw';
+    // 已移除，改用 CSS media query 處理
 })();
 // --- 精準瞄準補丁：座標校正 (Precision Aiming Patch) ---
 // 已整合到主滑鼠移動監聽器中，避免重複註冊
@@ -3681,6 +3684,25 @@ function restartGame() {
 
     console.log("翻滾冷卻計量條補丁已載入。");
 })();
+function injectPlayerMovement(angle, force) {
+    if (typeof player !== 'undefined' && gameStarted) {
+        // Update player angle for flashlight and aiming
+        player.angle = angle * Math.PI / 180;
+        
+        // Move player based on joystick force
+        const normSpd = Math.min(force, 1) * player.speed;
+        let dx = Math.cos(player.angle) * normSpd;
+        let dy = Math.sin(player.angle) * normSpd;
+        
+        if (!isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
+        if (!isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
+    }
+}
+
+function stopPlayerMovement() {
+    // Stop movement when joystick is released
+}
+
 function setupVirtualJoystick() {
     // 建立搖桿容器
     const joystickContainer = document.createElement('div');
