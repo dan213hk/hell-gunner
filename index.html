@@ -1108,6 +1108,9 @@ function throwGrenade() {
     // 播放投擲音效
     playSound('grenade_throw');
 
+    // 手機震動效果
+    vibrate(60);
+
     // 視覺效果：投擲粒子
     for (let i = 0; i < 5; i++) {
         particles.push(new Particle(
@@ -1165,6 +1168,9 @@ function explodeGrenade(grenade) {
 
     // 播放爆炸音效
     playSound('grenade_explosion');
+
+    // 手機震動效果 - 強烈爆炸
+    vibrate([80, 40, 80]);
 
     // 視覺效果：爆炸粒子
     for (let i = 0; i < 30; i++) {
@@ -1280,8 +1286,15 @@ function fireShotgun() {
         playSound('shot', player.wepType || 2); // 使用武器類型參數
         player.muzzleFlash = 10;
         
-        // 手機震動效果
-        vibrate(30);
+        // 手機震動效果 - 根據武器類型調整強度
+        const weaponType = player.wepType || 2;
+        if (weaponType === 1) {
+            vibrate(25); // 手槍 - 輕微震動
+        } else if (weaponType === 2) {
+            vibrate([40, 20, 40]); // 散彈槍 - 多重脈衝，强烈
+        } else if (weaponType === 3) {
+            vibrate(15); // 輕機槍 - 輕微快速射擊
+        }
 
         // --- 新增：玩家後座力 ---
         let recoilDist = 50;
@@ -1629,6 +1642,9 @@ healthItems.forEach(h => {
 
         // 視覺回饋
         player.hitFlash = 10;
+
+        // 手機震動效果
+        vibrate(70);
 
         // 播放拾取音效
         playSound('pickup');
@@ -3827,6 +3843,9 @@ function restartGame() {
         player.rollTimer = ROLL_DURATION;
         player.rollCooldown = ROLL_CD_TIME;
 
+        // 手機震動效果
+        vibrate(80);
+
         // 決定翻滾方向
         let dx = 0, dy = 0;
         
@@ -4047,6 +4066,7 @@ function setupMobileButtons() {
         btnSwitch.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(50);
             switchWeapon();
         });
     }
@@ -4061,6 +4081,7 @@ function setupMobileButtons() {
         btnGrenade.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(100);
             mobileThrowGrenade();
         });
     }
@@ -4075,6 +4096,7 @@ function setupMobileButtons() {
         btnDodge.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(80);
             performDodge();
         });
     }
