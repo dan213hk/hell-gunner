@@ -3451,6 +3451,9 @@ function restartGame() {
             dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
             dom.style.right = side === 'right' ? `${window.innerWidth - t.clientX - 40}px` : 'auto';
             dom.style.top = `${t.clientY - 40}px`;
+            
+            // 搖桿觸摸震動效果
+            vibrate(30);
         }
     }
 
@@ -3491,6 +3494,9 @@ function restartGame() {
                     const knob = side === 'left' ? lKnob : rKnob;
                     dom.style.display = 'none';
                     knob.style.transform = `translate(0,0)`;
+                    
+                    // 搖桿釋放震動效果
+                    vibrate(20);
                 }
             });
         }
@@ -4017,7 +4023,11 @@ function performDodge() {
 // 震動效果輔助函數
 function vibrate(pattern) {
     if (navigator.vibrate) {
-        navigator.vibrate(pattern);
+        try {
+            navigator.vibrate(pattern);
+        } catch (e) {
+            console.log('Vibration failed:', e);
+        }
     }
 }
 
