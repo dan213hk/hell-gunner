@@ -2866,6 +2866,10 @@ function startGame() {
             document.documentElement.requestFullscreen({ navigationUI: 'hide' });
         }
     }
+    
+    // 手機瀏覽器隱藏地址欄
+    window.scrollTo(0, 1);
+    window.scrollTo(0, 0);
 
     // 7. 立即啟動遊戲循環
     gameStarted = true;
@@ -3767,6 +3771,13 @@ function restartGame() {
         let dx = 0, dy = 0;
         if (keys['KeyW']) dy -= 1; if (keys['KeyS']) dy += 1;
         if (keys['KeyA']) dx -= 1; if (keys['KeyD']) dx += 1;
+
+        // 手機上使用左搖桿方向
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile && typeof controls !== 'undefined' && controls.left && controls.left.active) {
+            dx = controls.left.moveX;
+            dy = controls.left.moveY;
+        }
 
         if (dx === 0 && dy === 0) {
             player.rollAngle = player.angle; // 往準心方向
