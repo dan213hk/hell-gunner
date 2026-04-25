@@ -346,35 +346,6 @@
         body:not(.game-started) #mobile-action-buttons {
             display: none !important;
         }
-        .fullscreen-btn {
-            display: none;
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 0, 0, 0.5);
-            background: rgba(0, 0, 0, 0.8);
-            color: #ff0000;
-            font-size: 24px;
-            z-index: 10001;
-            cursor: pointer;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .fullscreen-btn:active {
-            background: rgba(255, 0, 0, 0.3);
-        }
-        @media screen and (max-width: 1024px) {
-            .fullscreen-btn {
-                display: block;
-            }
-        }
-        body:not(.game-started) .fullscreen-btn {
-            display: none !important;
-        }
     </style>
 </head>
 <body>
@@ -420,7 +391,6 @@
     <button class="mobile-action-btn" id="btn-grenade">💣</button>
     <button class="mobile-action-btn" id="btn-dodge">↻</button>
 </div>
-<button id="fullscreen-btn" class="fullscreen-btn">⛶</button>
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     <div id="sidebar">
@@ -2892,30 +2862,41 @@ function startGame() {
         radarOverlay.style.display = 'block';
     }
 
-    // 6. 進入全畫面
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-    } else if (document.documentElement.webkitRequestFullscreen) {
-        document.documentElement.webkitRequestFullscreen();
-    } else if (document.documentElement.msRequestFullscreen) {
-        document.documentElement.msRequestFullscreen();
-    }
-    
-    // iOS Safari 全螢幕處理
-    if (navigator.userAgent.match(/(iPad|iPhone|iPod)/g)) {
+    // 6. 手機橫屏時自動進入全畫面
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile && window.innerWidth > window.innerHeight) {
         if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
         }
+        // 手機瀏覽器隱藏地址欄
+        window.scrollTo(0, 1);
+        window.scrollTo(0, 0);
     }
-    
-    // 手機瀏覽器隱藏地址欄
-    window.scrollTo(0, 1);
-    window.scrollTo(0, 0);
 
     // 7. 立即啟動遊戲循環
     gameStarted = true;
     loop();
 }
+
+// 監聽螢幕方向變化，橫屏時自動進入全畫面
+window.addEventListener('orientationchange', () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile && gameStarted && window.innerWidth > window.innerHeight) {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        }
+        window.scrollTo(0, 1);
+        window.scrollTo(0, 0);
+    }
+});
 
 function restartGame() {
     // 隱藏死亡選單
@@ -3826,14 +3807,11 @@ function restartGame() {
         // 決定翻滾方向
         let dx = 0, dy = 0;
         
-        // 手機上使用左搖桿方向
+        // 手機上使用左搖桿方向（總是使用最後的方向）
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile && typeof controls !== 'undefined' && controls.left) {
-            const dist = Math.hypot(controls.left.moveX, controls.left.moveY);
-            if (dist > 0) {
-                dx = controls.left.moveX;
-                dy = controls.left.moveY;
-            }
+            dx = controls.left.moveX;
+            dy = controls.left.moveY;
         } else {
             // 電腦上使用 WASD
             if (keys['KeyW']) dy -= 1; if (keys['KeyS']) dy += 1;
@@ -4024,7 +4002,6 @@ function setupMobileButtons() {
     const btnSwitch = document.getElementById('btn-switch');
     const btnGrenade = document.getElementById('btn-grenade');
     const btnDodge = document.getElementById('btn-dodge');
-    const btnFullscreen = document.getElementById('fullscreen-btn');
 
     if (btnSwitch) {
         btnSwitch.addEventListener('touchstart', (e) => {
@@ -4062,31 +4039,6 @@ function setupMobileButtons() {
             e.preventDefault();
             e.stopPropagation();
             performDodge();
-        });
-    }
-
-    if (btnFullscreen) {
-        const toggleFullscreen = () => {
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-            } else if (document.documentElement.webkitRequestFullscreen) {
-                document.documentElement.webkitRequestFullscreen();
-            } else if (document.documentElement.msRequestFullscreen) {
-                document.documentElement.msRequestFullscreen();
-            }
-            // 手機瀏覽器隱藏地址欄
-            window.scrollTo(0, 1);
-            window.scrollTo(0, 0);
-        };
-        btnFullscreen.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleFullscreen();
-        }, { passive: false });
-        btnFullscreen.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleFullscreen();
         });
     }
 }
