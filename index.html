@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Hell-Gunner</title>
     <style>
     html {
@@ -101,6 +101,7 @@
             cursor: crosshair !important;
             touch-action: none; /* 禁用觸控手勢 */
             touch-action: manipulation; /* 禁用雙擊放大 */
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
         #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 80vw; height: 45vw; max-height: 80vh; max-width: calc(80vh * 16 / 9); aspect-ratio: 16 / 9; }
         canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; object-fit: contain; }
@@ -300,7 +301,7 @@
             display: none;
             position: fixed;
             right: 10px;
-            bottom: 60px;
+            bottom: calc(60px + env(safe-area-inset-bottom));
             z-index: 1001;
             flex-direction: column;
             gap: 10px;
@@ -1072,18 +1073,25 @@ function throwGrenade() {
     // 設置冷卻
     player.grenadeCooldown = GRENADE_COOLDOWN;
 
-    // 計算鼠標在世界坐標中的位置
-    const targetX = mousePos.x + camera.x;
-    const targetY = mousePos.y + camera.y;
+    // 計算投擲方向 - 手機上使用右搖桿方向，電腦上使用鼠標方向
+    let angle;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile && typeof controls !== 'undefined' && controls.right && controls.right.active) {
+        // 手機上使用右搖桿方向
+        angle = Math.atan2(controls.right.moveY, controls.right.moveX);
+        player.angle = angle;
+    } else {
+        // 電腦上使用鼠標方向
+        const targetX = mousePos.x + camera.x;
+        const targetY = mousePos.y + camera.y;
+        const dx = targetX - player.x;
+        const dy = targetY - player.y;
+        angle = Math.atan2(dy, dx);
+    }
 
-    // 計算從玩家到鼠標的方向和距離
-    const dx = targetX - player.x;
-    const dy = targetY - player.y;
-    const distance = Math.hypot(dx, dy);
-    const angle = Math.atan2(dy, dx);
-
-    // 計算投擲速度（確保能到達目標）
-    const throwSpeed = Math.min(distance / 40, 6); // 限制最大速度，大幅減少投擲距離
+    // 計算投擲速度
+    const throwSpeed = 6;
     const vx = Math.cos(angle) * throwSpeed;
     const vy = Math.sin(angle) * throwSpeed;
 
@@ -1094,9 +1102,7 @@ function throwGrenade() {
         vx: vx,
         vy: vy,
         fuseTimer: fuseTime,
-        active: true,
-        targetX: targetX,
-        targetY: targetY
+        active: true
     });
 
     // 播放投擲音效
