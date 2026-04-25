@@ -3828,18 +3828,8 @@ function restartGame() {
         if (keys['KeyW']) dy -= 1; if (keys['KeyS']) dy += 1;
         if (keys['KeyA']) dx -= 1; if (keys['KeyD']) dx += 1;
 
-        // 手機上使用左搖桿方向（即使沒有按住也要使用最後的方向）
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile && typeof controls !== 'undefined' && controls.left) {
-            const dist = Math.hypot(controls.left.moveX, controls.left.moveY);
-            if (dist > 0) {
-                dx = controls.left.moveX;
-                dy = controls.left.moveY;
-            }
-        }
-
         if (dx === 0 && dy === 0) {
-            player.rollAngle = player.angle; // 往準心方向
+            player.rollAngle = player.angle; // 往準心方向（手機和電腦都使用這個）
         } else {
             player.rollAngle = Math.atan2(dy, dx); // 往移動方向
         }
