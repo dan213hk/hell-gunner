@@ -2863,13 +2863,24 @@ function startGame() {
     }
 
     // 6. 自動進入全畫面
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-    } else if (document.documentElement.webkitRequestFullscreen) {
-        document.documentElement.webkitRequestFullscreen();
-    } else if (document.documentElement.msRequestFullscreen) {
-        document.documentElement.msRequestFullscreen();
-    }
+    const requestFullscreen = () => {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
+        }
+    };
+    requestFullscreen();
+    
+    // 延遲後再次嘗試隱藏地址欄
+    setTimeout(() => {
+        requestFullscreen();
+        window.scrollTo(0, 1);
+        window.scrollTo(0, 0);
+    }, 100);
+    
     // 手機瀏覽器隱藏地址欄
     window.scrollTo(0, 1);
     window.scrollTo(0, 0);
