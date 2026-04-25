@@ -158,6 +158,9 @@
         @media screen and (max-width: 768px) {
             #game-container {
                 position: relative;
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
             }
             #sidebar {
                 width: 25vw;
@@ -175,6 +178,9 @@
             }
             #sidebar .task-list {
                 font-size: 1.2vw;
+            }
+            #mobile-actions-sidebar {
+                display: block;
             }
             canvas {
                 width: 100%;
@@ -208,13 +214,13 @@
             gap: 10px;
         }
         .mobile-action-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: 2px solid rgba(255, 0, 0, 0.5);
             background: rgba(0, 0, 0, 0.8);
             color: #ff0000;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -224,6 +230,16 @@
             -webkit-user-select: none;
             touch-action: none;
             pointer-events: auto;
+            margin: 5px;
+        }
+        #mobile-action-buttons {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        #mobile-actions-sidebar {
+            display: none;
         }
         .mobile-action-btn:active {
             background: rgba(255, 0, 0, 0.3);
@@ -259,11 +275,6 @@
     </div>
     <button class="start-btn" onclick="restartGame()">重新挑戰</button>
 </div>
-<div id="mobile-action-buttons">
-    <button class="mobile-action-btn" id="btn-switch">⚔</button>
-    <button class="mobile-action-btn" id="btn-grenade">💣</button>
-    <button class="mobile-action-btn" id="btn-dodge">🛡</button>
-</div>
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     <div id="sidebar">
@@ -290,6 +301,14 @@
             <div id="radar-container">
                 <div id="radar-ping-label">SCANNING...</div>
                 <canvas id="radarCanvas" width="240" height="180"></canvas>
+            </div>
+        </div>
+        <div class="ui-box" id="mobile-actions-sidebar">
+            <div class="label">戰術操作 (ACTIONS)</div>
+            <div id="mobile-action-buttons">
+                <button class="mobile-action-btn" id="btn-switch">⚔</button>
+                <button class="mobile-action-btn" id="btn-grenade">💣</button>
+                <button class="mobile-action-btn" id="btn-dodge">🛡</button>
             </div>
         </div>
 <div class="controls">
@@ -3217,7 +3236,7 @@ function restartGame() {
             border-radius: 50%; top: 20px; left: 20px;
         }
         #left-stick { left: 50px; }
-        #right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
+        #right-stick { right: 50px; bottom: 50px; top: auto; border-color: rgba(0, 200, 255, 0.3); }
         #right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
     `;
     document.head.appendChild(style);
