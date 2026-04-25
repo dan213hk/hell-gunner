@@ -257,7 +257,7 @@
                 width: 100vw;
                 height: calc(100vw * 9 / 16);
                 max-height: 100vh;
-                max-width: calc(100vh * 16 / 9);
+                max-width: calc(95vh * 16 / 9);
                 margin: auto;
             }
             body {
@@ -308,7 +308,7 @@
             top: 10px;
             right: 10px;
             z-index: 10000;
-            flex-direction: row;
+            flex-direction: column;
             gap: 10px;
         }
         .mobile-action-btn {
@@ -2872,6 +2872,13 @@ function startGame() {
     } else if (document.documentElement.msRequestFullscreen) {
         document.documentElement.msRequestFullscreen();
     }
+    
+    // iOS Safari 全螢幕處理
+    if (navigator.userAgent.match(/(iPad|iPhone|iPod)/g)) {
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        }
+    }
 
     // 7. 立即啟動遊戲循環
     gameStarted = true;
@@ -3920,10 +3927,10 @@ function switchWeapon() {
 
 function mobileThrowGrenade() {
     if (!gameStarted) return;
-    // 使用右搖桿方向投擲手榴彈
-    if (typeof controls !== 'undefined' && controls.right && controls.right.active) {
+    // 使用右搖桿方向投擲手榴彈（即使沒有按住也要使用最後的方向）
+    if (typeof controls !== 'undefined' && controls.right) {
         const dist = Math.hypot(controls.right.moveX, controls.right.moveY);
-        if (dist > 10) {
+        if (dist > 5) {
             const angle = Math.atan2(controls.right.moveY, controls.right.moveX);
             player.angle = angle;
         }
