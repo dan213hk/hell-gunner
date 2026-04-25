@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hell-Gunner">
     <title>Hell-Gunner</title>
     <style>
     html {
@@ -104,7 +107,7 @@
             touch-action: manipulation; /* 禁用雙擊放大 */
             padding: 0;
         }
-        #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 80vw; height: 45vw; max-height: 80vh; max-width: calc(80vh * 16 / 9); aspect-ratio: 16 / 9; }
+        #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #050000; width: 100vw; height: calc(100vw * 9 / 16); max-height: 100vh; max-width: calc(100vh * 16 / 9); }
         canvas { background: #020000; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; object-fit: contain; }
         #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #0a0000; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; order: 2; }
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
@@ -303,7 +306,7 @@
             position: fixed;
             top: 10px;
             right: 10px;
-            z-index: 1001;
+            z-index: 10000;
             flex-direction: row;
             gap: 10px;
         }
