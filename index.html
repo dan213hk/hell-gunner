@@ -1252,6 +1252,7 @@ function explodeGrenade(grenade) {
         player.hp -= actualDamage;
         player.shake = 30;
         player.hitFlash = 20;
+        vibrate([50, 30, 50]);
         updateUI();
     }
 
@@ -1278,6 +1279,9 @@ function fireShotgun() {
         player.shake = 18;
         playSound('shot', player.wepType || 2); // 使用武器類型參數
         player.muzzleFlash = 10;
+        
+        // 手機震動效果
+        vibrate(30);
 
         // --- 新增：玩家後座力 ---
         let recoilDist = 50;
@@ -1592,6 +1596,9 @@ collectibles.forEach(c => {
 
         // 視覺回饋：受傷紅光是紅色，回血可以用綠色閃爍
         player.hitFlash = 10; // 借用閃爍機制，但我們可以改顏色或直接加一個特效
+        
+        // 手機震動效果
+        vibrate(60);
 
         // 浮動文字特效 (選配)：讓玩家知道回了多少血
         for(let i=0; i<5; i++) {
@@ -1691,6 +1698,7 @@ healthItems = healthItems.filter(h => !h.collected);
             playSound('hit');
             player.hitFlash = 15;
             player.shake = 30;
+            vibrate([50, 30, 50]);
             en.biteTimer = 60;
             for(let i = 0; i < 5; i++) {
                 decals.push({
@@ -4006,6 +4014,13 @@ function performDodge() {
     }
 }
 
+// 震動效果輔助函數
+function vibrate(pattern) {
+    if (navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+}
+
 // 設置移動端按鈕事件監聽器，阻止事件冒泡到 mousedown
 function setupMobileButtons() {
     const btnSwitch = document.getElementById('btn-switch');
@@ -4016,6 +4031,7 @@ function setupMobileButtons() {
         btnSwitch.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(50);
             switchWeapon();
         }, { passive: false });
         btnSwitch.addEventListener('mousedown', (e) => {
@@ -4029,6 +4045,7 @@ function setupMobileButtons() {
         btnGrenade.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(100);
             mobileThrowGrenade();
         }, { passive: false });
         btnGrenade.addEventListener('mousedown', (e) => {
@@ -4042,6 +4059,7 @@ function setupMobileButtons() {
         btnDodge.addEventListener('touchstart', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            vibrate(80);
             performDodge();
         }, { passive: false });
         btnDodge.addEventListener('mousedown', (e) => {
