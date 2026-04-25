@@ -159,8 +159,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: #000;
             color: #ff0000;
             z-index: 9999;
@@ -173,6 +173,7 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+            box-sizing: border-box;
         }
         #portrait-warning h1 {
             font-size: 32px;
@@ -337,6 +338,11 @@
             #mobile-action-buttons {
                 display: flex;
             }
+        }
+        /* 隱藏按鈕在主選單和橫屏警告時 */
+        #start-menu ~ #mobile-action-buttons,
+        #portrait-warning ~ #mobile-action-buttons {
+            display: none !important;
         }
     </style>
 </head>
@@ -2887,6 +2893,11 @@ function restartGame() {
         animationFrameId = null;
     }
 
+    // 重置計時器
+    if (typeof window.resetTimer === 'function') {
+        window.resetTimer();
+    }
+
     // 重置遊戲狀態
     level = 1;
     player.hp = 100;
@@ -3738,6 +3749,12 @@ function restartGame() {
         }
     };
 
+    window.resetTimer = function() {
+        startTime = 0;
+        timerRunning = false;
+        timerDiv.style.display = 'none';
+    };
+
     console.log("計時器補丁已準備好。");
 })();
 // --- 戰術閃避補丁 (Tactical Roll Patch) ---
@@ -3772,11 +3789,14 @@ function restartGame() {
         if (keys['KeyW']) dy -= 1; if (keys['KeyS']) dy += 1;
         if (keys['KeyA']) dx -= 1; if (keys['KeyD']) dx += 1;
 
-        // 手機上使用左搖桿方向
+        // 手機上使用左搖桿方向（即使沒有按住也要使用最後的方向）
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile && typeof controls !== 'undefined' && controls.left && controls.left.active) {
-            dx = controls.left.moveX;
-            dy = controls.left.moveY;
+        if (isMobile && typeof controls !== 'undefined' && controls.left) {
+            const dist = Math.hypot(controls.left.moveX, controls.left.moveY);
+            if (dist > 0) {
+                dx = controls.left.moveX;
+                dy = controls.left.moveY;
+            }
         }
 
         if (dx === 0 && dy === 0) {
