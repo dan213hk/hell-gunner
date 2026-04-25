@@ -90,7 +90,7 @@
         body {
           margin: 0; background: #000; color: #ff0000;
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-            height: 100vh; overflow: hidden;
+            min-height: 100vh; overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -253,6 +253,9 @@
                 max-height: 90vh;
                 max-width: calc(90vh * 16 / 9);
                 margin: auto;
+            }
+            body {
+                height: 100vh;
             }
             #sidebar {
                 width: 25vw;
@@ -3906,6 +3909,14 @@ function switchWeapon() {
 
 function mobileThrowGrenade() {
     if (!gameStarted) return;
+    // 使用右搖桿方向投擲手榴彈
+    if (typeof controls !== 'undefined' && controls.right && controls.right.active) {
+        const dist = Math.hypot(controls.right.moveX, controls.right.moveY);
+        if (dist > 10) {
+            const angle = Math.atan2(controls.right.moveY, controls.right.moveX);
+            player.angle = angle;
+        }
+    }
     // Call the existing grenade throwing logic
     if (typeof window.throwGrenade !== 'function') {
         // Fallback: create grenade manually if function doesn't exist
