@@ -4063,12 +4063,6 @@ function setupMobileButtons() {
             vibrate(50);
             switchWeapon();
         }, { passive: false });
-        btnSwitch.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            vibrate(50);
-            switchWeapon();
-        });
     }
 
     if (btnGrenade) {
@@ -4078,12 +4072,6 @@ function setupMobileButtons() {
             vibrate(100);
             mobileThrowGrenade();
         }, { passive: false });
-        btnGrenade.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            vibrate(100);
-            mobileThrowGrenade();
-        });
     }
 
     if (btnDodge) {
@@ -4093,12 +4081,6 @@ function setupMobileButtons() {
             vibrate(80);
             performDodge();
         }, { passive: false });
-        btnDodge.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            vibrate(80);
-            performDodge();
-        });
     }
 }
 
