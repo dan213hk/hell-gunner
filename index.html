@@ -26,56 +26,56 @@
 }
 
 .menu-title {
-    font-size: 72px; color: #ff0000;
+    font-size: 5vw; color: #ff0000;
     text-shadow: 0 0 20px #ff0000;
-    margin-bottom: 10px; font-weight: bold;
-    letter-spacing: 10px;
+    margin-bottom: 1vh; font-weight: bold;
+    letter-spacing: 0.5vw;
 }
 
 .menu-subtitle {
-    font-size: 14px; color: #880000;
-    letter-spacing: 4px; margin-bottom: 30px;
+    font-size: 1.2vw; color: #880000;
+    letter-spacing: 0.3vw; margin-bottom: 3vh;
 }
 
 .menu-info {
     background: rgba(0, 0, 0, 0.6);
     border: 1px solid #4a0000;
-    padding: 20px 30px;
-    margin-bottom: 30px;
-    max-width: 500px;
+    padding: 2vh 3vw;
+    margin-bottom: 3vh;
+    max-width: 40vw;
     text-align: left;
 }
 
 .menu-info-section {
-    margin-bottom: 15px;
+    margin-bottom: 1.5vh;
 }
 
 .menu-info-title {
-    font-size: 12px;
+    font-size: 1vw;
     color: #ff0000;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 8px;
+    letter-spacing: 0.2vw;
+    margin-bottom: 0.8vh;
     font-weight: bold;
 }
 
 .menu-info-text {
-    font-size: 13px;
+    font-size: 1.1vw;
     color: #880000;
     line-height: 1.6;
 }
 
 .menu-info-text span {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 0.4vh;
 }
 
 .start-btn {
     background: #800;
     color: #ff0000;
     border: 2px solid #ff0000;
-    padding: 15px 40px;
-    font-size: 18px;
+    padding: 1.5vh 4vw;
+    font-size: 1.5vw;
     font-weight: bold;
     cursor: crosshair;
     transition: 0.3s;
@@ -108,9 +108,10 @@
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
         .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
-        #radar-container { width: 80%; height: 15vh; border: 2px solid #4a0000; background: #030303; margin: 1vh auto; position: relative; overflow: hidden; flex-shrink: 0; }
+        #radar-container { width: 80%; height: 15vh; border: none; background: #030303; margin: 1vh auto; position: relative; overflow: hidden; flex-shrink: 0; }
+        #radar-overlay { position: absolute; top: 80px; left: 20px; width: 240px; height: 180px; background: #030303; border: none; overflow: hidden; z-index: 100; pointer-events: none; }
         #radarCanvas { width: 100%; height: 100%; }
-        #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 0.6vw; opacity: 0; transition: 0.5s; pointer-events: none; }
+        #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 12px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .hp-bar-bg { width: 100%; height: 1vh; background: #200; border: 1px solid #700; margin-top: 0.8vh; }
         #hp-fill { height: 100%; background: linear-gradient(90deg, #800, #ff0000); width: 100%; transition: 0.1s; }
         .reload-bar-bg { width: 100%; height: 0.5vh; background: #111; margin-top: 0.6vh; border: 1px solid #333; overflow: hidden; }
@@ -357,14 +358,11 @@
             <div class="label">手榴彈 (GRENADE)</div>
             <div class="reload-bar-bg"><div id="grenade-fill"></div></div>
         </div>
-        <div class="ui-box">
-            <div class="label">掃描雷達 (SONAR)</div>
-            <div id="radar-container">
-                <div id="radar-ping-label">SCANNING...</div>
-                <canvas id="radarCanvas" width="240" height="180"></canvas>
-            </div>
-        </div>
     </div>
+</div>
+<div id="radar-overlay">
+    <div id="radar-ping-label">SCANNING...</div>
+    <canvas id="radarCanvas" width="240" height="180"></canvas>
 </div>
 
 <script>
@@ -3318,7 +3316,6 @@ function restartGame() {
                 let dx = Math.cos(angle) * normSpd;
                 let dy = Math.sin(angle) * normSpd;
                 if (!isInsideWall(player.x + dx, player.y, player.size)) player.x += dx;
-                if (!isInsideWall(player.y + dy, player.y + dy, player.size)) player.y += dy; // 修正原本的小 bug
                 if (!isInsideWall(player.x, player.y + dy, player.size)) player.y += dy;
             }
         }
@@ -3336,7 +3333,7 @@ function restartGame() {
     };
 
     // 4. 事件監聽
-    canvas.addEventListener('touchstart', e => {
+    function handleTouchStart(e) {
         e.preventDefault();
         for (let t of e.changedTouches) {
             const side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
@@ -3347,15 +3344,15 @@ function restartGame() {
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
             ctrl.startY = t.clientY;
-            
+
             dom.style.display = 'block';
             dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
             dom.style.right = side === 'right' ? `${window.innerWidth - t.clientX - 40}px` : 'auto';
             dom.style.top = `${t.clientY - 40}px`;
         }
-    }, { passive: false });
+    }
 
-    canvas.addEventListener('touchmove', e => {
+    function handleTouchMove(e) {
         e.preventDefault();
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
@@ -3378,9 +3375,9 @@ function restartGame() {
                 }
             });
         }
-    }, { passive: false });
+    }
 
-    canvas.addEventListener('touchend', e => {
+    function handleTouchEnd(e) {
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
@@ -3395,7 +3392,19 @@ function restartGame() {
                 }
             });
         }
-    });
+    }
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+
+    // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
+        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
+        sidebar.addEventListener('touchend', handleTouchEnd);
+    }
 
     // 5. 視覺優化：隱藏側邊欄以增加手機視野
     // 已移除，改用 CSS media query 處理
