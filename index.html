@@ -3382,10 +3382,11 @@ function restartGame() {
     const lKnob = lStick.querySelector('.stick-knob');
     const rKnob = rStick.querySelector('.stick-knob');
 
-    let controls = {
+    window.controls = {
         left: { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, id: -1 },
         right: { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0, id: -1 }
     };
+    let controls = window.controls;
 
     // 3. 核心邏輯補丁
     const originalUpdate = window.update;
