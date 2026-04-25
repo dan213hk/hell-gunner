@@ -340,8 +340,39 @@
             }
         }
         /* 隱藏按鈕在主選單和橫屏警告時 */
-        #start-menu ~ #mobile-action-buttons,
-        #portrait-warning ~ #mobile-action-buttons {
+        body.game-started #mobile-action-buttons {
+            display: flex !important;
+        }
+        body:not(.game-started) #mobile-action-buttons {
+            display: none !important;
+        }
+        .fullscreen-btn {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.8);
+            color: #ff0000;
+            font-size: 24px;
+            z-index: 10001;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .fullscreen-btn:active {
+            background: rgba(255, 0, 0, 0.3);
+        }
+        @media screen and (max-width: 1024px) {
+            .fullscreen-btn {
+                display: block;
+            }
+        }
+        body:not(.game-started) .fullscreen-btn {
             display: none !important;
         }
     </style>
@@ -389,6 +420,7 @@
     <button class="mobile-action-btn" id="btn-grenade">💣</button>
     <button class="mobile-action-btn" id="btn-dodge">↻</button>
 </div>
+<button id="fullscreen-btn" class="fullscreen-btn">⛶</button>
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     <div id="sidebar">
@@ -2850,6 +2882,9 @@ function startGame() {
 
     // 5. 隱藏開始選單
     document.getElementById('start-menu').style.display = 'none';
+    
+    // 添加 game-started class 到 body
+    document.body.classList.add('game-started');
 
     // 6. 顯示雷達
     const radarOverlay = document.getElementById('radar-overlay');
@@ -2893,6 +2928,9 @@ function restartGame() {
         animationFrameId = null;
     }
 
+    // 移除 game-started class
+    document.body.classList.remove('game-started');
+
     // 重置計時器
     if (typeof window.resetTimer === 'function') {
         window.resetTimer();
@@ -2924,6 +2962,7 @@ function restartGame() {
     // 延遲重新開始遊戲循環
     setTimeout(() => {
         gameStarted = true;
+        document.body.classList.add('game-started');
         loop();
     }, 100);
 }
@@ -3983,6 +4022,7 @@ function setupMobileButtons() {
     const btnSwitch = document.getElementById('btn-switch');
     const btnGrenade = document.getElementById('btn-grenade');
     const btnDodge = document.getElementById('btn-dodge');
+    const btnFullscreen = document.getElementById('fullscreen-btn');
 
     if (btnSwitch) {
         btnSwitch.addEventListener('touchstart', (e) => {
@@ -4020,6 +4060,31 @@ function setupMobileButtons() {
             e.preventDefault();
             e.stopPropagation();
             performDodge();
+        });
+    }
+
+    if (btnFullscreen) {
+        const toggleFullscreen = () => {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+            // 手機瀏覽器隱藏地址欄
+            window.scrollTo(0, 1);
+            window.scrollTo(0, 0);
+        };
+        btnFullscreen.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFullscreen();
+        }, { passive: false });
+        btnFullscreen.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFullscreen();
         });
     }
 }
