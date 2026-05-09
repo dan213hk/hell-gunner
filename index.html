@@ -359,6 +359,7 @@
                 <span>● 進行血祭（收集 3 個五芒星）以開啟傳送門</span>
                 <span>● 按 WASD 移動，滑鼠左鍵 射擊，Space 戰術迴避，E 手榴彈</span>
                 <span>● 手機：左搖桿移動，右搖桿瞄準射擊，按鈕切換武器/手榴彈/迴避</span>
+                <span>● 黃色寶箱包含武器彈藥！手槍無限彈藥，其他武器有彈藥限制</span>
             </div>
         </div>
         <div class="menu-info-section">
@@ -405,12 +406,22 @@
             <div id="task-ui" class="task-list">儀式數目: 0 / 3</div>
         </div>
         <div class="ui-box">
-            <div class="label">散彈槍裝填 (READY)</div>
+            <div class="label">武器裝填 (READY)</div>
             <div class="reload-bar-bg"><div id="reload-fill"></div></div>
         </div>
         <div class="ui-box">
             <div class="label">手榴彈 (GRENADE)</div>
             <div class="reload-bar-bg"><div id="grenade-fill"></div></div>
+        </div>
+        <div class="ui-box" id="weapon-ammo-box">
+            <div class="label">武器彈藥 (AMMO)</div>
+            <div id="all-weapons-ammo" style="font-size: 11px; line-height: 1.4;">
+                <div style="color: #00ccff; font-weight: bold;">1. 手槍: ∞</div>
+                <div style="color: #ffaa00; opacity: 0.5;">2. 散彈槍: 0</div>
+                <div style="color: #00ff44; opacity: 0.5;">3. 重機槍: 0</div>
+                <div style="color: #ff00ff; opacity: 0.5;">4. 狙擊槍: 0</div>
+                <div style="color: #ff4400; opacity: 0.5;">5. 火箭筒: 0</div>
+            </div>
         </div>
     </div>
 </div>
@@ -1148,6 +1159,15 @@ let healthItems = []; // 回血道具數組
 let exitPoint = null, exitTempPoint = null;
 let keys = {};
 let grenades = []; // 手榴彈數組
+let weaponChests = []; // 武器寶箱數組
+
+// 武器彈藥配置
+const WEAPON_AMMO = {
+    2: 40,   // 散彈槍
+    3: 120,  // 重機槍
+    4: 15,   // 狙擊槍
+    5: 8     // 火箭筒
+};
 
 let radarTimer = 0, radarCircleRadius = 0;
 let lastRadarSnapshot = { enemies: [], collectibles: [], exit: null };
@@ -1646,9 +1666,23 @@ function initLevel() {
     player.y = startPos.y;
     collectibles = [];
     healthItems = []; // 清空回血道具
+    weaponChests = []; // 清空武器寶箱
     for(let i=0; i<3; i++) {
         let pos = getRandomEmptyPos(40);
         collectibles.push({x: pos.x, y: pos.y, collected: false, visibleTimer: 0});
+    }
+    // 生成武器寶箱 (每關生成 2-4 個，隨機武器類型 2-5)
+    const chestCount = 2 + Math.floor(Math.random() * 3);
+    for(let i=0; i<chestCount; i++) {
+        let pos = getRandomEmptyPos(40);
+        let weaponType = 2 + Math.floor(Math.random() * 4); // 2-5
+        weaponChests.push({
+            x: pos.x,
+            y: pos.y,
+            weaponType: weaponType,
+            collected: false,
+            visibleTimer: 0
+        });
     }
     let ePos = getRandomEmptyPos(100);
     exitTempPoint = { x: ePos.x, y: ePos.y, visibleTimer: 0 };
@@ -1668,7 +1702,8 @@ function initLevel() {
     }
     lastRadarSnapshot = { 
         enemies: enemies.map(e => ({x: e.x, y: e.y, color: e.eye, visibleTimer: 0})), 
-        collectibles: collectibles.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, visibleTimer: 0})), 
+        collectibles: collectibles.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, visibleTimer: 0})),
+        weaponChests: weaponChests.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, weaponType: c.weaponType, visibleTimer: 0})),
         exit: exitPoint ? {x: exitPoint.x, y: exitPoint.y, visibleTimer: 0} : null 
     };
     radarTimer = 0; // 重置計時器
@@ -1802,6 +1837,7 @@ function update() {
         lastRadarSnapshot = { 
             enemies: enemies.map(e => ({x: e.x, y: e.y, color: e.eye, visibleTimer: 0})), 
             collectibles: collectibles.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, visibleTimer: 0})), 
+            weaponChests: weaponChests.filter(c => !c.collected).map(c => ({x: c.x, y: c.y, weaponType: c.weaponType, visibleTimer: 0})),
             exit: exitPoint ? {x: exitPoint.x, y: exitPoint.y, visibleTimer: 0} : null 
         };
         document.getElementById('radar-ping-label').style.opacity = 1; 
@@ -1821,10 +1857,21 @@ function update() {
             let d = Math.hypot(player.x - lastRadarSnapshot.exit.x, player.y - lastRadarSnapshot.exit.y);
             if (radarCircleRadius >= d && lastRadarSnapshot.exit.visibleTimer <= 0) lastRadarSnapshot.exit.visibleTimer = 60;
         }
+        // 武器寶箱雷達偵測
+        if (lastRadarSnapshot.weaponChests) {
+            lastRadarSnapshot.weaponChests.forEach(chest => {
+                let d = Math.hypot(player.x - chest.x, player.y - chest.y);
+                if (radarCircleRadius >= d && chest.visibleTimer <= 0) chest.visibleTimer = 60;
+            });
+        }
     }
     lastRadarSnapshot.enemies.forEach(en => { if(en.visibleTimer > 0) en.visibleTimer--; });
     lastRadarSnapshot.collectibles.forEach(c => { if(c.visibleTimer > 0) c.visibleTimer--; });
     if(lastRadarSnapshot.exit && lastRadarSnapshot.exit.visibleTimer > 0) lastRadarSnapshot.exit.visibleTimer--;
+    // 武器寶箱可見時間遞減
+    if (lastRadarSnapshot.weaponChests) {
+        lastRadarSnapshot.weaponChests.forEach(chest => { if(chest.visibleTimer > 0) chest.visibleTimer--; });
+    }
 
     particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
     shells.forEach((s, i) => { s.vx *= 0.9; s.vy *= 0.9; s.x += s.vx; s.y += s.vy; s.angle += s.rot; s.life--; if(s.life <= 0) shells.splice(i, 1); });
@@ -1897,6 +1944,61 @@ healthItems.forEach(h => {
 
 // 清理已收集的healthItems
 healthItems = healthItems.filter(h => !h.collected);
+
+// 武器寶箱拾取邏輯
+weaponChests.forEach(chest => {
+    if (!chest.collected && Math.hypot(player.x - chest.x, player.y - chest.y) < 40) {
+        // 初始化彈藥
+        if (!player.ammo) player.ammo = { 2: 0, 3: 0, 4: 0, 5: 0 };
+        
+        const maxAmmo = WEAPON_AMMO[chest.weaponType];
+        const currentAmmo = player.ammo[chest.weaponType] || 0;
+        
+        // 檢查是否已達彈藥上限
+        if (currentAmmo >= maxAmmo) {
+            // 已達上限，顯示提示效果但不收集
+            for(let i = 0; i < 5; i++) {
+                particles.push(new Particle(
+                    chest.x, chest.y,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    20, 2, '#888'
+                ));
+            }
+            return; // 不收集寶箱
+        }
+        
+        chest.collected = true;
+        
+        // 給予彈藥 (但不超过上限)
+        const ammoAmount = WEAPON_AMMO[chest.weaponType];
+        const newAmmo = Math.min(currentAmmo + ammoAmount, maxAmmo);
+        const actualAdded = newAmmo - currentAmmo;
+        player.ammo[chest.weaponType] = newAmmo;
+        
+        // 不再自動切換武器，保持當前武器
+        
+        // 播放音效
+        playSound('pickup');
+        
+        // 手機震動
+        vibrate(80);
+        
+        // 視覺效果 (數量根據實際獲得彈藥比例)
+        const particleCount = Math.max(8, Math.floor(20 * (actualAdded / ammoAmount)));
+        for(let i = 0; i < particleCount; i++) {
+            let angle = (Math.PI * 2 / particleCount) * i;
+            let speed = 4 + Math.random() * 3;
+            particles.push(new Particle(
+                chest.x, chest.y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                40, 5, '#ffaa00'
+            ));
+        }
+    }
+});
+
     if (exitPoint && Math.hypot(player.x - exitPoint.x, player.y - exitPoint.y) < 50) { 
     // --- 修改這裡：在跳下一關前，先把目前的出口座標存成下一關的起點 ---
     startPos = { x: exitPoint.x, y: exitPoint.y };
@@ -2144,6 +2246,63 @@ healthItems.forEach(h => {
         ctx.strokeRect(-8, -3, 16, 6);
         ctx.strokeRect(-3, -8, 6, 16);
 
+        ctx.restore();
+    }
+});
+
+// --- 繪製武器寶箱 ---
+weaponChests.forEach(chest => {
+    if (!chest.collected) {
+        ctx.save();
+        ctx.translate(chest.x, chest.y);
+        
+        // 閃爍效果
+        let blink = Math.sin(Date.now() / 400) * 0.2 + 0.8;
+        
+        // 繪製寶箱外框
+        ctx.strokeStyle = `rgba(255, 170, 0, ${blink})`;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-14, -10, 28, 20);
+        
+        // 寶箱內部顏色 (根據武器類型)
+        const weaponColors = { 2: '#ffaa00', 3: '#00ff44', 4: '#ff00ff', 5: '#ff4400' };
+        ctx.fillStyle = weaponColors[chest.weaponType];
+        ctx.globalAlpha = blink * 0.3;
+        ctx.fillRect(-12, -8, 24, 16);
+        ctx.globalAlpha = 1;
+        
+        // 武器圖示
+        ctx.fillStyle = weaponColors[chest.weaponType];
+        if (chest.weaponType === 2) {
+            // 散彈槍圖示
+            ctx.fillRect(-8, -2, 16, 4);
+            ctx.fillRect(-6, -4, 4, 8);
+        } else if (chest.weaponType === 3) {
+            // 重機槍圖示
+            ctx.fillRect(-6, -2, 12, 4);
+            ctx.fillRect(-4, -4, 4, 8);
+        } else if (chest.weaponType === 4) {
+            // 狙擊槍圖示
+            ctx.fillRect(-10, -1, 20, 2);
+            ctx.fillRect(-6, -4, 4, 8);
+        } else if (chest.weaponType === 5) {
+            // 火箭筒圖示
+            ctx.fillRect(-8, -3, 16, 6);
+            ctx.beginPath();
+            ctx.moveTo(4, -3);
+            ctx.lineTo(10, 0);
+            ctx.lineTo(4, 3);
+            ctx.fill();
+        }
+        
+        // 光芒效果
+        ctx.globalAlpha = blink * 0.4;
+        ctx.strokeStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(0, 0, 20 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        
         ctx.restore();
     }
 });
@@ -2933,7 +3092,7 @@ if ((angleDiff < flashlightAngle && dist < flashlightRange) || dist < proximityR
         ctx.fillRect(30, -4, 15, 2);
         ctx.fillRect(30, 2, 15, 2);
     } else if (player.wepType === 3) {
-        // MP5
+        // 重機槍
         ctx.fillStyle = '#333';
         ctx.fillRect(10, -3, 20, 6);
         ctx.fillStyle = '#222';
@@ -3001,7 +3160,7 @@ function drawRadar() {
     rctx.globalAlpha = 0.3; rctx.fillStyle = '#2c2';
     walls.forEach(w => { rctx.fillRect(w.x*sx, w.y*sy, w.w*sx, w.h*sy); });
     rctx.globalAlpha = 1;
-// --- 新增：繪製動畫五芒星收集物 ---
+// --- 新增：繪製動畫五芒星收集物 (增強版) ---
 lastRadarSnapshot.collectibles.forEach(c => {
     if (c.visibleTimer > 0) {
         rctx.save();
@@ -3012,22 +3171,39 @@ lastRadarSnapshot.collectibles.forEach(c => {
         rctx.translate(cx, cy);
 
         // --- 動態 A：旋轉動畫 ---
-        // 使用 Date.now() 加上一個較小的除數，產生緩慢的逆時針旋轉
-        rctx.rotate(-Date.now() / 2000); 
+        rctx.rotate(-Date.now() / 1500); 
 
-        // --- 動態 B：閃爍動畫 ---
-        // 利用正弦波 (Math.sin) 產生透明度的週期性變化，模擬不穩定的能量
-        let blink = Math.sin(Date.now() / 300) * 0.4 + 0.6; // 透明度介於 0.2 到 1.0 之間
+        // --- 動態 B：脈衝縮放效果 ---
+        let pulse = Math.sin(Date.now() / 250) * 0.3 + 1; // 0.7 到 1.3 的縮放
+        rctx.scale(pulse, pulse);
+
+        // --- 動態 C：閃爍透明度 ---
+        let alpha = Math.sin(Date.now() / 200) * 0.3 + 0.7;
         
-        // 設定顏色 (霓虹紅) 與透明度
-        rctx.strokeStyle = `rgba(255, 0, 0, ${blink})`;
-        rctx.lineWidth = 1;
-        rctx.lineJoin = 'round'; // 角落圓滑一點
-
-        // 繪製五芒星路徑 (外半徑 4, 內半徑 1.5)
+        // 設定更鮮豔的顏色 - 血紅色
+        const bloodRed = '#ff0040';
+        const brightRed = '#ff3333';
+        
+        // --- 繪製發光外圈 ---
+        rctx.globalAlpha = alpha * 0.4;
+        rctx.fillStyle = bloodRed;
         rctx.beginPath();
-        const outerR = 4;
-        const innerR = 1.5;
+        rctx.arc(0, 0, 8, 0, Math.PI * 2);
+        rctx.fill();
+        
+        // --- 繪製五芒星路徑 (更大的尺寸) ---
+        rctx.globalAlpha = alpha;
+        rctx.strokeStyle = brightRed;
+        rctx.lineWidth = 2;
+        rctx.lineJoin = 'round';
+        
+        // 添加發光效果
+        rctx.shadowColor = bloodRed;
+        rctx.shadowBlur = 6;
+
+        rctx.beginPath();
+        const outerR = 6;  // 增大尺寸
+        const innerR = 2.5;
         for (let i = 0; i < 10; i++) {
             let angle = (i * Math.PI) / 5 - Math.PI / 2;
             let r = (i % 2 === 0) ? outerR : innerR;
@@ -3038,10 +3214,18 @@ lastRadarSnapshot.collectibles.forEach(c => {
         }
         rctx.closePath();
         
-        // 繪製外框 (雷達不填充，保持透明感)
+        // 填充 + 描邊
+        rctx.fillStyle = `rgba(255, 0, 64, ${alpha * 0.5})`;
+        rctx.fill();
         rctx.stroke();
         
-        rctx.restore(); // 恢復畫布狀態
+        // 中心點
+        rctx.fillStyle = '#fff';
+        rctx.beginPath();
+        rctx.arc(0, 0, 2, 0, Math.PI * 2);
+        rctx.fill();
+        
+        rctx.restore();
     }
 });
 // ---------------------------------
@@ -3050,6 +3234,25 @@ lastRadarSnapshot.collectibles.forEach(c => {
         rctx.beginPath(); rctx.arc(lastRadarSnapshot.exit.x*sx, lastRadarSnapshot.exit.y*sy, 4, 0, 6.28); rctx.fill();
     }
     lastRadarSnapshot.enemies.forEach(en => { if(en.visibleTimer > 0) { rctx.globalAlpha = en.visibleTimer / 60; rctx.fillStyle = en.color; rctx.fillRect(en.x*sx-1, en.y*sy-1, 3, 3); rctx.globalAlpha = 1; } });
+    
+    // 繪製武器寶箱 (金色方塊閃爍)
+    if (lastRadarSnapshot.weaponChests) {
+        lastRadarSnapshot.weaponChests.forEach(chest => {
+            if (chest.visibleTimer > 0) {
+                const weaponRadarColors = { 2: '#ffaa00', 3: '#00ff44', 4: '#ff00ff', 5: '#ff4400' };
+                rctx.globalAlpha = chest.visibleTimer / 60;
+                rctx.fillStyle = weaponRadarColors[chest.weaponType] || '#ffaa00';
+                // 閃爍效果
+                if (Date.now() % 400 > 200) {
+                    rctx.fillRect(chest.x*sx-3, chest.y*sy-3, 6, 6);
+                } else {
+                    rctx.fillRect(chest.x*sx-2, chest.y*sy-2, 4, 4);
+                }
+                rctx.globalAlpha = 1;
+            }
+        });
+    }
+    
     rctx.fillStyle = '#fff'; rctx.fillRect(px-2, py-2, 4, 4);
 }
 
@@ -3060,6 +3263,8 @@ function updateUI() {
     let collCount = collectibles.filter(c=>c.collected).length;
     document.getElementById('task-ui').innerText = `儀式數目: ${collCount} / 3`;
     document.getElementById('task-ui').style.color = (collCount === 3) ? "#0ff" : "#00ffaa";
+    // 更新武器UI
+    updateWeaponUI();
 }
 
 window.addEventListener('mousemove', e => { 
@@ -3270,6 +3475,12 @@ function restartGame() {
     collectibles = [];
     healthItems = [];
     decals = [];
+    weaponChests = [];
+    
+    // 重置彈藥
+    if (player.ammo) {
+        player.ammo = { 2: 0, 3: 0, 4: 0, 5: 0 };
+    }
 
     // 重新初始化關卡
     initLevel();
@@ -3843,7 +4054,7 @@ function restartGame() {
     const SPECS = {
         1: { name: 'PISTOL',  cd: 30, range: 400, pellets: 1, spread: 0.04, dmg: 16, color: '#00ccff', auto: true, hit: 0.22 },
         2: { name: 'SHOTGUN', cd: 80, range: 250, pellets: 30, spread: 0.6, dmg: 2, color: '#ffaa00', auto: true, hit: 0.50, scatterMult: 0.6 },
-        3: { name: 'MP5',   cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', auto: true, hPer: 6.0, hit: 0.20 },
+        3: { name: '重機槍',   cd: 6,  range: 350, pellets: 1, spread: 0.16, dmg: 6, color: '#00ff44', auto: true, hPer: 6.0, hit: 0.20 },
         4: { name: 'SNIPER', cd: 180, range: 800, pellets: 1, spread: 0.01, dmg: 80, color: '#ff00ff', auto: true, hit: 0.95, penetrate: true },
         5: { name: 'ROCKET', cd: 200, range: 500, pellets: 1, spread: 0.05, dmg: 150, color: '#ff4400', auto: true, hit: 0.90, explosive: true }
     };
@@ -3864,6 +4075,15 @@ function restartGame() {
                 5: 0  // 火箭筒
             };
         }
+        // 初始化彈藥系統
+        if (player.ammo === undefined) {
+            player.ammo = {
+                2: 0, // 散彈槍
+                3: 0, // 輕機槍
+                4: 0, // 狙擊槍
+                5: 0  // 火箭筒
+            };
+        }
         return true;
     }
 
@@ -3871,23 +4091,28 @@ function restartGame() {
     window.addEventListener('keydown', e => {
         if (!ensureVars()) return;
         let oldWeapon = player.wepType;
+        // 檢查武器是否可用 (手槍永遠可用，其他需要彈藥)
+        const canUseWeapon = (wepId) => {
+            if (wepId === 1) return true; // 手槍無限彈藥
+            return player.ammo && player.ammo[wepId] > 0;
+        };
         if (e.code === 'Digit1' && player.wepType !== 1) {
             player.wepType = 1;
             playSound('weapon_switch');
         }
-        if (e.code === 'Digit2' && player.wepType !== 2) {
+        if (e.code === 'Digit2' && player.wepType !== 2 && canUseWeapon(2)) {
             player.wepType = 2;
             playSound('weapon_switch');
         }
-        if (e.code === 'Digit3' && player.wepType !== 3) {
+        if (e.code === 'Digit3' && player.wepType !== 3 && canUseWeapon(3)) {
             player.wepType = 3;
             playSound('weapon_switch');
         }
-        if (e.code === 'Digit4' && player.wepType !== 4) {
+        if (e.code === 'Digit4' && player.wepType !== 4 && canUseWeapon(4)) {
             player.wepType = 4;
             playSound('weapon_switch');
         }
-        if (e.code === 'Digit5' && player.wepType !== 5) {
+        if (e.code === 'Digit5' && player.wepType !== 5 && canUseWeapon(5)) {
             player.wepType = 5;
             playSound('weapon_switch');
         }
@@ -3900,6 +4125,14 @@ function restartGame() {
     // 4. 完整射擊系統 (整合三個補丁的邏輯 + 增強視覺效果)
     window.fireShotgun = function() {
         if (!ensureVars() || !gameStarted || player.weaponTimers[player.wepType] > 0 || player.isRolling || player.isDead) return;
+        
+        // 檢查彈藥
+        if (player.wepType !== 1 && player.ammo[player.wepType] <= 0) {
+            // 沒有彈藥，切換回手槍
+            player.wepType = 1;
+            if (typeof playSound === 'function') playSound('weapon_switch');
+            return;
+        }
         
         const s = SPECS[player.wepType];
 
@@ -3915,6 +4148,18 @@ function restartGame() {
             }
         }
 
+        // 消耗彈藥 (手槍不消耗)
+        if (player.wepType !== 1) {
+            player.ammo[player.wepType]--;
+            // 彈藥耗盡時切換回手槍
+            if (player.ammo[player.wepType] <= 0) {
+                setTimeout(() => {
+                    player.wepType = 1;
+                    if (typeof playSound === 'function') playSound('weapon_switch');
+                }, 300);
+            }
+        }
+        
         player.weaponTimers[player.wepType] = s.cd;
         player.shake = (player.wepType === 2) ? 22 : (player.wepType === 3) ? 12 : (player.wepType === 4) ? 30 : (player.wepType === 5) ? 35 : 6;
         player.muzzleFlash = 12;
@@ -4095,21 +4340,8 @@ function restartGame() {
         // 自動連發
         if (isMDown && SPECS[player.wepType].auto) window.fireShotgun();
 
-        // UI 同步 - 使用原有的reload-fill顯示當前武器狀態
-        const rf = document.getElementById('reload-fill');
-        const rl = rf?.parentElement?.previousElementSibling;
-        if (rf) {
-            if (player.wepType === 3) {
-                rf.style.width = player.heat + "%";
-                rf.style.background = player.isHot ? "#f00" : `rgb(${player.heat*2.55}, ${255-player.heat*2.55}, 0)`;
-                if(rl) rl.innerText = player.isHot ? "OVERHEATED!" : "BARREL TEMP";
-            } else {
-                let progress = Math.max(0, 100 - (player.weaponTimers[player.wepType] / SPECS[player.wepType].cd * 100));
-                rf.style.width = progress + "%";
-                rf.style.background = SPECS[player.wepType].color;
-                if(rl) rl.innerText = SPECS[player.wepType].name + " READY";
-            }
-        }
+        // UI 同步 - 顯示彈藥信息 (包含冷卻時間)
+        updateWeaponUI();
     };
 
     console.log("整合武器系統已啟動：手槍、散彈槍、步槍統一管理。");
@@ -4356,8 +4588,101 @@ function stopPlayerMovement() {
 
 function switchWeapon() {
     if (!gameStarted) return;
-    player.wepType = (player.wepType % 5) + 1;
-    if (typeof playSound === 'function') playSound('weapon_switch');
+    // 只切換到有彈藥的武器
+    let startType = player.wepType;
+    let nextType = startType;
+    do {
+        nextType = (nextType % 5) + 1;
+        // 手槍永遠可用
+        if (nextType === 1) break;
+        // 檢查是否有彈藥
+        if (player.ammo && player.ammo[nextType] > 0) break;
+    } while (nextType !== startType);
+    
+    if (nextType !== player.wepType) {
+        // 更新UI
+        updateUI();
+        if (typeof playSound === 'function') playSound('weapon_switch');
+    }
+}
+
+function updateWeaponUI() {
+    // 主武器欄 - 顯示當前武器狀態
+    const rf = document.getElementById('reload-fill');
+    const rl = rf?.parentElement?.previousElementSibling;
+    
+    // 獲取或創建彈藥顯示元素
+    let ammoDisplay = document.getElementById('weapon-ammo-display');
+    if (!ammoDisplay && rl) {
+        ammoDisplay = document.createElement('div');
+        ammoDisplay.id = 'weapon-ammo-display';
+        ammoDisplay.style.cssText = 'font-size: 14px; font-weight: bold; margin-top: 4px; text-shadow: 0 0 5px currentColor;';
+        rl.parentNode.insertBefore(ammoDisplay, rl.nextSibling);
+    }
+    
+    if (rf && player.wepType && player.ammo) {
+        const weaponNames = { 1: 'PISTOL', 2: 'SHOTGUN', 3: '重機槍', 4: 'SNIPER', 5: 'ROCKET' };
+        const weaponColors = { 1: '#00ccff', 2: '#ffaa00', 3: '#00ff44', 4: '#ff00ff', 5: '#ff4400' };
+        
+        if (player.wepType === 1) {
+            // 手槍顯示冷卻進度
+            let cdPercent = Math.max(0, 100 - (player.weaponTimers[1] / 30 * 100));
+            rf.style.width = cdPercent + '%';
+            rf.style.background = weaponColors[1];
+            if (rl) rl.innerText = weaponNames[1];
+            if (ammoDisplay) {
+                ammoDisplay.innerText = '';
+            }
+        } else if (player.wepType === 3) {
+            // 重機槍 顯示過熱溫度 (原始方法)
+            rf.style.width = player.heat + '%';
+            rf.style.background = player.isHot ? '#f00' : `rgb(${player.heat*2.55}, ${255-player.heat*2.55}, 0)`;
+            if (rl) rl.innerText = player.isHot ? '【OVERHEAT】' : 'BARREL TEMP';
+            if (ammoDisplay) {
+                // 過熱時顯示紅色警告，否則清空
+                ammoDisplay.style.color = player.isHot ? '#ff0000' : weaponColors[3];
+                ammoDisplay.innerText = player.isHot ? '【OVERHEAT】' : '';
+            }
+        } else {
+            // 其他武器顯示冷卻進度
+            const cd = player.wepType === 2 ? 80 : player.wepType === 4 ? 180 : 200;
+            let cdPercent = Math.max(0, 100 - (player.weaponTimers[player.wepType] / cd * 100));
+            rf.style.width = cdPercent + '%';
+            rf.style.background = weaponColors[player.wepType];
+            if (rl) rl.innerText = weaponNames[player.wepType];
+            if (ammoDisplay) {
+                ammoDisplay.innerText = '';
+            }
+        }
+    }
+    
+    // 更新所有武器彈藥顯示
+    updateAllWeaponAmmoUI();
+}
+
+function updateAllWeaponAmmoUI() {
+    // 更新側邊欄彈藥顯示
+    const ammoContainer = document.getElementById('all-weapons-ammo');
+    if (!ammoContainer) return;
+    
+    const weaponNames = { 1: '手槍', 2: '散彈槍', 3: '重機槍', 4: '狙擊槍', 5: '火箭筒' };
+    const weaponColors = { 1: '#00ccff', 2: '#ffaa00', 3: '#00ff44', 4: '#ff00ff', 5: '#ff4400' };
+    const maxAmmo = { 1: '∞', 2: 40, 3: 120, 4: 15, 5: 8 };
+    
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        const currentAmmo = i === 1 ? '∞' : (player.ammo?.[i] || 0);
+        const ammoText = i === 1 ? '∞ / ∞' : `${currentAmmo} / ${maxAmmo[i]}`;
+        
+        const isCurrent = player.wepType === i;
+        const hasAmmo = i === 1 || (player.ammo?.[i] || 0) > 0;
+        
+        const style = isCurrent 
+            ? `color: ${weaponColors[i]}; font-weight: bold; text-shadow: 0 0 5px ${weaponColors[i]};` 
+            : (hasAmmo ? `color: ${weaponColors[i]};` : `color: #666; opacity: 0.5;`);
+        html += `<div style="${style} margin: 2px 0; font-size: 11px;">${i}. ${weaponNames[i]}: ${ammoText}</div>`;
+    }
+    ammoContainer.innerHTML = html;
 }
 
 function mobileThrowGrenade() {
