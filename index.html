@@ -110,7 +110,7 @@
         }
         #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #150505; width: 100vw; height: 100vh; max-width: calc(100vh * 16 / 9); max-height: calc(100vw * 9 / 16); box-sizing: border-box; }
         canvas { background: #1a0a0a; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; object-fit: contain; position: relative; }
-        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #2a0a0a; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; order: 2; }
+        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #2a0a0a; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; order: 2; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
         .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
@@ -281,6 +281,10 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 max-width: 160px;
                 padding: 0.8vw;
                 order: 2;
+                touch-action: manipulation;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
             }
             #sidebar .label {
                 font-size: 0.7vw;
@@ -4094,14 +4098,17 @@ border-radius: 50%; top: 20px; left: 20px;
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
         
-        // 只在非側邊欄區域檢查UI元素，側邊欄允許觸控
-        if (!isInSidebar && (
-            target.tagName === 'BUTTON' || target.tagName === 'A' || 
-            target.closest('button') || target.closest('a') ||
-            target.classList.contains('ui-element') ||
-            target.closest('#mobile-action-buttons')
-        )) {
-            return; // 不處理UI元素的觸控事件
+        // 強制處理側邊欄的所有觸控，不進行UI檢查
+        if (isInSidebar) {
+            // 側邊欄觸控直接處理，跳過UI檢查
+        } else {
+            // 非側邊欄區域檢查UI元素
+            if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
+                target.closest('button') || target.closest('a') ||
+                target.classList.contains('ui-element') ||
+                target.closest('#mobile-action-buttons')) {
+                return; // 不處理UI元素的觸控事件
+            }
         }
         
         // 檢查所有觸控點，包括側邊欄的觸控
