@@ -4107,7 +4107,7 @@ border-radius: 50%; top: 20px; left: 20px;
         originalUpdate();
     };
 
-    // 4. 極端觸控事件處理 - 完全重寫
+    // 4. 最極端解決方案 - 專用側邊欄觸控處理器
     function handleTouchStart(e) {
         // 立即阻止默認行為
         e.preventDefault();
@@ -4118,24 +4118,58 @@ border-radius: 50%; top: 20px; left: 20px;
             return;
         }
         
-        // 檢查是否點擊了按鈕或其他UI元素（但側邊欄除外）
+        // 檢查是否在側邊欄
         const target = e.target;
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
         
-        // 如果不是側邊欄且是UI元素，直接返回
-        if (!isInSidebar && (
-            target.tagName === 'BUTTON' || target.tagName === 'A' || 
+        // 側邊欄：使用專用處理器，完全繞過所有檢查
+        if (isInSidebar) {
+            // 直接處理側邊欄觸控，不做任何檢查
+            for (let t of e.changedTouches) {
+                // 檢查觸控ID是否已經被使用
+                if (controls.right.id === t.identifier) continue;
+                
+                // 強制重置右搖桿
+                if (controls.right.active) {
+                    controls.right.active = false;
+                    controls.right.id = -1;
+                    controls.right.moveX = 0;
+                    controls.right.moveY = 0;
+                    rStick.style.display = 'none';
+                    rKnob.style.transform = `translate(0,0)`;
+                }
+                
+                // 分配右搖桿
+                controls.right.active = true;
+                controls.right.id = t.identifier;
+                controls.right.startX = t.clientX;
+                controls.right.startY = t.clientY;
+                controls.right.lastMoveTime = Date.now();
+                
+                // 顯示右搖桿
+                rStick.style.display = 'block';
+                rStick.style.position = 'fixed';
+                rStick.style.left = 'auto';
+                rStick.style.right = `${window.innerWidth - t.clientX - 40}px`;
+                rStick.style.top = `${t.clientY - 40}px`;
+                
+                vibrate(30);
+            }
+            return; // 側邊欄處理完成
+        }
+        
+        // 非側邊欄：檢查UI元素
+        if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
             target.closest('button') || target.closest('a') ||
             target.classList.contains('ui-element') ||
-            target.closest('#mobile-action-buttons')
-        )) {
+            target.closest('#mobile-action-buttons')) {
             return;
         }
         
-        // 處理所有觸控點
+        // 正常區域處理
         for (let t of e.changedTouches) {
-            // 檢查這個觸控ID是否已經被使用
+            // 檢查觸控ID是否已經被使用
             let alreadyAssigned = false;
             ['left', 'right'].forEach(side => {
                 if (controls[side].id === t.identifier) {
@@ -4145,22 +4179,12 @@ border-radius: 50%; top: 20px; left: 20px;
             
             if (alreadyAssigned) continue;
             
-            // 極端簡化的分配邏輯
-            let side, ctrl, dom;
-            
-            if (isInSidebar) {
-                // 側邊欄任何觸控都分配為右搖桿
-                side = 'right';
-                ctrl = controls.right;
-                dom = rStick;
-            } else {
-                // 正常區域：簡單的左右分配
-                side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
-                ctrl = controls[side];
-                dom = side === 'left' ? lStick : rStick;
-            }
+            // 簡單分配邏輯
+            const side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
+            const ctrl = controls[side];
+            const dom = side === 'left' ? lStick : rStick;
 
-            // 如果該側搖桿已經被激活，強制重置並重新分配
+            // 如果該側搖桿已經被激活，強制重置
             if (ctrl.active) {
                 ctrl.active = false;
                 ctrl.id = -1;
@@ -4176,7 +4200,7 @@ border-radius: 50%; top: 20px; left: 20px;
             ctrl.startY = t.clientY;
             ctrl.lastMoveTime = Date.now();
 
-            // 顯示搖桿 - 使用絕對定位避免複雜計算
+            // 顯示搖桿
             dom.style.display = 'block';
             dom.style.position = 'fixed';
             
