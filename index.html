@@ -310,33 +310,33 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #radar-overlay {
                 top: 10px;
                 right: 10px;
-                width: 40px;
-                height: 30px;
+                width: 80px;
+                height: 60px;
             }
             #survival-timer-overlay {
                 top: 10px !important;
-                right: 60px !important;
-                font-size: 7px !important;
+                right: 100px !important;
+                font-size: 12px !important;
             }
             #mobile-action-buttons {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 10px !important;
-                right: 10px !important;
+                bottom: 20px !important;
+                right: 20px !important;
                 top: auto !important;
                 transform: none !important;
                 z-index: 10003 !important;
                 flex-direction: column !important;
-                gap: 10px !important;
+                gap: 15px !important;
             }
             .mobile-action-btn {
-                width: 35px !important;
-                height: 35px !important;
+                width: 50px !important;
+                height: 50px !important;
                 border-radius: 50% !important;
                 border: 2px solid #ff0000 !important;
                 background: rgba(0, 0, 0, 0.95) !important;
                 color: #ff0000 !important;
-                font-size: 14px !important;
+                font-size: 20px !important;
                 font-weight: bold !important;
                 cursor: pointer !important;
                 display: flex !important;
@@ -3520,22 +3520,22 @@ function startGame() {
         if (mobileActionButtons) {
             mobileActionButtons.style.display = 'flex';
             mobileActionButtons.style.position = 'fixed';
-            mobileActionButtons.style.bottom = '10px';
-            mobileActionButtons.style.right = '10px';
+            mobileActionButtons.style.bottom = '20px';
+            mobileActionButtons.style.right = '20px';
             mobileActionButtons.style.zIndex = '10003';
             mobileActionButtons.style.flexDirection = 'column';
-            mobileActionButtons.style.gap = '10px';
+            mobileActionButtons.style.gap = '15px';
             
             const buttons = mobileActionButtons.querySelectorAll('.mobile-action-btn');
             buttons.forEach(btn => {
                 btn.style.display = 'flex';
-                btn.style.width = '35px';
-                btn.style.height = '35px';
+                btn.style.width = '50px';
+                btn.style.height = '50px';
                 btn.style.borderRadius = '50%';
                 btn.style.border = '2px solid #ff0000';
                 btn.style.background = 'rgba(0, 0, 0, 0.95)';
                 btn.style.color = '#ff0000';
-                btn.style.fontSize = '14px';
+                btn.style.fontSize = '20px';
                 btn.style.fontWeight = 'bold';
                 btn.style.alignItems = 'center';
                 btn.style.justifyContent = 'center';
@@ -4908,24 +4908,24 @@ function setupMobileButtons() {
     if (mobileActionButtons) {
         mobileActionButtons.style.display = 'flex';
         mobileActionButtons.style.position = 'fixed';
-        mobileActionButtons.style.bottom = '10px';
-        mobileActionButtons.style.right = '10px';
+        mobileActionButtons.style.bottom = '20px';
+        mobileActionButtons.style.right = '20px';
         mobileActionButtons.style.zIndex = '10003';
         mobileActionButtons.style.flexDirection = 'column';
-        mobileActionButtons.style.gap = '10px';
+        mobileActionButtons.style.gap = '15px';
     }
     
     // 強制設置按鈕樣式
     [btnSwitch, btnGrenade, btnDodge].forEach(btn => {
         if (btn) {
             btn.style.display = 'flex';
-            btn.style.width = '35px';
-            btn.style.height = '35px';
+            btn.style.width = '50px';
+            btn.style.height = '50px';
             btn.style.borderRadius = '50%';
             btn.style.border = '2px solid #ff0000';
             btn.style.background = 'rgba(0, 0, 0, 0.95)';
             btn.style.color = '#ff0000';
-            btn.style.fontSize = '14px';
+            btn.style.fontSize = '20px';
             btn.style.fontWeight = 'bold';
             btn.style.alignItems = 'center';
             btn.style.justifyContent = 'center';
