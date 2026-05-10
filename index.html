@@ -268,17 +268,17 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 position: relative;
                 width: 100vw;
                 height: 100vh;
-                max-width: calc(100vh * 16 / 9);
-                max-height: calc(100vw * 9 / 16);
+                max-width: none;
+                max-height: none;
                 box-sizing: border-box;
                 border: none;
-                transform: scale(0.78);
+                transform: scale(1);
                 transform-origin: center center;
             }
             #sidebar {
-                width: 30vw;
-                min-width: 100px;
-                max-width: 180px;
+                width: 25vw;
+                min-width: 80px;
+                max-width: 160px;
                 padding: 0.8vw;
                 order: 2;
             }
@@ -302,33 +302,33 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #radar-overlay {
                 top: 12px;
                 right: 12px;
-                width: 100px;
-                height: 75px;
+                width: 120px;
+                height: 90px;
             }
             #survival-timer-overlay {
                 top: 12px !important;
-                right: 122px !important;
+                right: 142px !important;
                 font-size: 14px !important;
             }
             #mobile-action-buttons {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 25px !important;
-                right: 25px !important;
+                bottom: 20px !important;
+                right: 20px !important;
                 top: auto !important;
                 transform: none !important;
                 z-index: 10003 !important;
                 flex-direction: column !important;
-                gap: 18px !important;
+                gap: 15px !important;
             }
             .mobile-action-btn {
-                width: 60px !important;
-                height: 60px !important;
+                width: 55px !important;
+                height: 55px !important;
                 border-radius: 50% !important;
                 border: 3px solid #ff0000 !important;
                 background: rgba(0, 0, 0, 0.95) !important;
                 color: #ff0000 !important;
-                font-size: 24px !important;
+                font-size: 22px !important;
                 font-weight: bold !important;
                 cursor: pointer !important;
                 display: flex !important;
@@ -4098,6 +4098,42 @@ border-radius: 50%; top: 20px; left: 20px;
             return; // 不處理UI元素的觸控事件
         }
         
+        // 檢查是否在側邊欄區域 - 如果是，強制分配為右搖桿
+        const sidebar = document.getElementById('sidebar');
+        const isInSidebar = sidebar && sidebar.contains(target);
+        
+        // 如果在側邊欄且右搖桿未激活，強制分配為右搖桿
+        if (isInSidebar && !controls.right.active) {
+            for (let t of e.changedTouches) {
+                // 檢查這個觸控ID是否已經被使用
+                let alreadyAssigned = false;
+                ['left', 'right'].forEach(side => {
+                    if (controls[side].id === t.identifier) {
+                        alreadyAssigned = true;
+                    }
+                });
+                
+                if (alreadyAssigned) continue;
+                
+                // 強制分配為右搖桿
+                const ctrl = controls.right;
+                const dom = rStick;
+                
+                ctrl.active = true;
+                ctrl.id = t.identifier;
+                ctrl.startX = t.clientX;
+                ctrl.startY = t.clientY;
+
+                dom.style.display = 'block';
+                dom.style.left = 'auto';
+                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
+                dom.style.top = `${t.clientY - 40}px`;
+                
+                vibrate(30);
+                return; // 側邊欄觸控只處理一次
+            }
+        }
+        
         e.preventDefault();
         // 只有在遊戲開始後才啟用搖桿
         if (!document.body.classList.contains('game-started')) {
@@ -4116,37 +4152,17 @@ border-radius: 50%; top: 20px; left: 20px;
             // 如果這個觸控ID已經被分配，跳過
             if (alreadyAssigned) continue;
             
-            // 改進的區域判斷 - 使用更精確的閾值
+            // 固定分配邏輯：左搖桿控制移動，右搖桿控制射擊
             const screenWidth = window.innerWidth;
-            const screenHeight = window.innerHeight;
-            const threshold = screenWidth * 0.6; // 調整為60%分界線
+            const threshold = screenWidth * 0.5; // 50%分界線
             const side = t.clientX < threshold ? 'left' : 'right';
             const ctrl = controls[side];
             const dom = side === 'left' ? lStick : rStick;
 
-            // 如果該側搖桿已經被激活，嘗試分配到另一側
-            if (ctrl.active) {
-                const otherSide = side === 'left' ? 'right' : 'left';
-                const otherCtrl = controls[otherSide];
-                if (!otherCtrl.active) {
-                    // 分配到另一側
-                    const otherDom = otherSide === 'left' ? lStick : rStick;
-                    otherCtrl.active = true;
-                    otherCtrl.id = t.identifier;
-                    otherCtrl.startX = t.clientX;
-                    otherCtrl.startY = t.clientY;
+            // 如果該側搖桿已經被激活，跳過（不再自動分配到另一側）
+            if (ctrl.active) continue;
 
-                    otherDom.style.display = 'block';
-                    otherDom.style.left = otherSide === 'left' ? `${t.clientX - 40}px` : 'auto';
-                    otherDom.style.right = otherSide === 'right' ? `${screenWidth - t.clientX - 40}px` : 'auto';
-                    otherDom.style.top = `${t.clientY - 40}px`;
-                    
-                    vibrate(30);
-                }
-                continue;
-            }
-
-            // 正常分配
+            // 固定分配到對應側
             ctrl.active = true;
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
@@ -4245,11 +4261,20 @@ border-radius: 50%; top: 20px; left: 20px;
         }
     }
 
-    // 只在canvas上添加事件監聽器，避免重複註冊
+    // 在canvas和側邊欄上添加事件監聽器
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
     canvas.addEventListener('touchcancel', handleTouchEnd); // 添加touchcancel支持
+
+    // 為側邊欄添加觸控事件監聽器，支持右搖桿控制
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
+        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
+        sidebar.addEventListener('touchend', handleTouchEnd);
+        sidebar.addEventListener('touchcancel', handleTouchEnd);
+    }
 
     // 添加全局錯誤恢復機制
     function resetAllJoysticks() {
