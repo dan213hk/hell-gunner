@@ -253,7 +253,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             .task-list { font-size: 1.2vw; }
             .controls { font-size: 0.9vw; }
         }
-        @media screen and (max-width: 768px) {
+        @media screen and (max-width: 1024px) {
             body {
                 height: 100vh;
                 padding: 0;
@@ -310,13 +310,13 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #radar-overlay {
                 top: 10px;
                 right: 10px;
-                width: 50px;
-                height: 38px;
+                width: 40px;
+                height: 30px;
             }
             #survival-timer-overlay {
                 top: 10px !important;
-                right: 70px !important;
-                font-size: 8px !important;
+                right: 60px !important;
+                font-size: 7px !important;
             }
             #mobile-action-buttons {
                 display: flex !important;
@@ -358,7 +358,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             padding: 0 20px;
             line-height: 1.6;
         }
-        @media screen and (max-width: 768px) {
+        @media screen and (max-width: 1024px) {
             #mobile-controls-info {
                 display: block;
             }
@@ -393,7 +393,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
         .mobile-action-btn:active {
             background: rgba(255, 0, 0, 0.3);
         }
-        @media screen and (max-width: 768px) {
+        @media screen and (max-width: 1024px) {
             #mobile-action-buttons {
                 display: flex;
             }
@@ -406,7 +406,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             display: none !important;
         }
         /* 強制在電腦上隱藏手機控制按鈕 */
-        @media screen and (min-width: 769px) {
+        @media screen and (min-width: 1025px) {
             #mobile-action-buttons {
                 display: none !important;
             }
@@ -3513,6 +3513,41 @@ function startGame() {
 
     // 7. 立即啟動遊戲循環
     gameStarted = true;
+    
+    // 強制顯示手機按鈕
+    setTimeout(() => {
+        const mobileActionButtons = document.getElementById('mobile-action-buttons');
+        if (mobileActionButtons) {
+            mobileActionButtons.style.display = 'flex';
+            mobileActionButtons.style.position = 'fixed';
+            mobileActionButtons.style.bottom = '10px';
+            mobileActionButtons.style.right = '10px';
+            mobileActionButtons.style.zIndex = '10003';
+            mobileActionButtons.style.flexDirection = 'column';
+            mobileActionButtons.style.gap = '10px';
+            
+            const buttons = mobileActionButtons.querySelectorAll('.mobile-action-btn');
+            buttons.forEach(btn => {
+                btn.style.display = 'flex';
+                btn.style.width = '35px';
+                btn.style.height = '35px';
+                btn.style.borderRadius = '50%';
+                btn.style.border = '2px solid #ff0000';
+                btn.style.background = 'rgba(0, 0, 0, 0.95)';
+                btn.style.color = '#ff0000';
+                btn.style.fontSize = '14px';
+                btn.style.fontWeight = 'bold';
+                btn.style.alignItems = 'center';
+                btn.style.justifyContent = 'center';
+                btn.style.userSelect = 'none';
+                btn.style.webkitUserSelect = 'none';
+                btn.style.touchAction = 'none';
+                btn.style.pointerEvents = 'auto';
+                btn.style.boxShadow = '0 2px 8px rgba(255, 0, 0, 0.5)';
+            });
+        }
+    }, 100);
+    
     loop();
 }
 
