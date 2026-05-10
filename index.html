@@ -273,8 +273,8 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 box-sizing: border-box;
                 border: none;
                 max-height: calc(100vw * 9 / 16 - 40px);
-                max-width: calc(100vw - 20px);
-                transform: scale(0.92);
+                max-width: calc(100vw - 40px);
+                transform: scale(0.88);
                 transform-origin: center center;
             }
             #sidebar {
@@ -4107,8 +4107,8 @@ border-radius: 50%; top: 20px; left: 20px;
         }
         
         for (let t of e.changedTouches) {
-            // 改進右搖桿區域判斷 - 右側1/3屏幕都算右搖桿
-            const side = t.clientX < window.innerWidth * 0.67 ? 'left' : 'right';
+            // 改進右搖桿區域判斷 - 右側40%屏幕都算右搖桿
+            const side = t.clientX < window.innerWidth * 0.6 ? 'left' : 'right';
             const ctrl = controls[side];
             const dom = side === 'left' ? lStick : rStick;
 
