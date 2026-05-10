@@ -272,15 +272,15 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #game-container {
                 position: relative;
                 width: 85vw;
-                height: 70vh;
-                max-width: calc(70vh * 16 / 9);
+                height: 65vh;
+                max-width: calc(65vh * 16 / 9);
                 max-height: calc(85vw * 9 / 16);
                 margin: auto;
                 box-sizing: border-box;
                 border: none;
                 transform: scale(0.75);
                 /* 確保在安全區域內 */
-                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 60px);
                 max-width: calc(100vw - 40px);
             }
             #sidebar {
@@ -310,13 +310,41 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #radar-overlay {
                 top: 10px;
                 right: 10px;
-                width: 120px;
-                height: 90px;
+                width: 100px;
+                height: 75px;
             }
             #survival-timer-overlay {
                 top: 10px !important;
-                right: 140px !important;
+                right: 120px !important;
                 font-size: 12px !important;
+            }
+            #mobile-action-buttons {
+                display: flex !important;
+                position: fixed;
+                top: 50%;
+                right: 10px;
+                transform: translateY(-50%);
+                z-index: 10000;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .mobile-action-btn {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                border: 2px solid rgba(255, 0, 0, 0.5);
+                background: rgba(0, 0, 0, 0.8);
+                color: #ff0000;
+                font-size: 20px;
+                font-weight: bold;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: none;
+                pointer-events: auto;
             }
         }
         #mobile-controls-info {
