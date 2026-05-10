@@ -253,20 +253,34 @@
             .controls { font-size: 0.9vw; }
         }
         @media screen and (max-width: 768px) {
-            #game-container {
-                position: relative;
-                width: 100vw;
-                height: 100vh;
-                max-width: calc(100vh * 16 / 9);
-                max-height: calc(100vw * 9 / 16);
-                margin: 0;
-                box-sizing: border-box;
-                border: none;
-            }
             body {
                 height: 100vh;
                 padding: 0;
                 margin: 0;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                /* 為Safari網址欄留出空間 */
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                /* 確保Safari不顯示網址欄 */
+                height: -webkit-fill-available;
+                min-height: 100vh;
+            }
+            #game-container {
+                position: relative;
+                width: 80vw;
+                height: 70vh;
+                max-width: calc(70vh * 16 / 9);
+                max-height: calc(80vw * 9 / 16);
+                margin: auto;
+                box-sizing: border-box;
+                border: none;
+                transform: scale(0.7);
+                /* 確保在安全區域內 */
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+                max-width: calc(100vw - 40px);
             }
             #sidebar {
                 width: 25vw;
@@ -1554,7 +1568,7 @@ function fireShotgun() {
         }
 
         // --- 新增：玩家後座力 ---
-        let recoilDist = 50;
+        let recoilDist = 25;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y, player.size)) player.x += rx;
@@ -3925,28 +3939,30 @@ function restartGame() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) return;
 
-    // 1. 插入搖桿樣式
-    const style = document.createElement('style');
-    style.innerHTML = `
-        #joystick-container {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none; z-index: 1000;
-        }
-        .stick {
-            position: absolute; width: 80px; height: 80px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 0, 0, 0.3);
-            border-radius: 50%; bottom: 50px; pointer-events: none;
-            display: none;
-        }
-        .stick-knob {
-            position: absolute; width: 40px; height: 40px;
-            background: rgba(255, 0, 0, 0.5);
-            border-radius: 50%; top: 20px; left: 20px;
-        }
-        #left-stick { left: 50px; }
-        #right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
-        #right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
+// 1. 插入搖桿樣式
+const style = document.createElement('style');
+style.textContent = `
+#joystick-container {
+display: none;
+}
+body.game-started #joystick-container {
+display: block;
+}
+.stick {
+position: absolute; width: 80px; height: 80px;
+background: rgba(255, 255, 255, 0.1);
+border: 2px solid rgba(255, 0, 0, 0.3);
+border-radius: 50%; bottom: 50px; pointer-events: none;
+display: none;
+}
+.stick-knob {
+position: absolute; width: 40px; height: 40px;
+background: rgba(255, 0, 0, 0.5);
+border-radius: 50%; top: 20px; left: 20px;
+}
+#left-stick { left: 50px; }
+#right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
+#right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
     `;
     document.head.appendChild(style);
 
@@ -4002,7 +4018,20 @@ function restartGame() {
 
     // 4. 事件監聽
     function handleTouchStart(e) {
+        // 檢查是否點擊了按鈕或其他UI元素
+        const target = e.target;
+        if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
+            target.closest('button') || target.closest('a') ||
+            target.classList.contains('ui-element')) {
+            return; // 不處理UI元素的觸控事件
+        }
+        
         e.preventDefault();
+        // 只有在遊戲開始後才啟用搖桿
+        if (!document.body.classList.contains('game-started')) {
+            return;
+        }
+        
         for (let t of e.changedTouches) {
             const side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
             const ctrl = controls[side];
@@ -4071,6 +4100,14 @@ function restartGame() {
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
+
+    // 為遊戲容器和側邊欄添加觸控事件監聽，不干擾UI按鈕
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        gameContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        gameContainer.addEventListener('touchend', handleTouchEnd);
+    }
 
     // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
     const sidebar = document.getElementById('sidebar');
@@ -4203,7 +4240,7 @@ function restartGame() {
         if (typeof playSound === 'function') playSound('shot', player.wepType);
 
         // 後坐力 (根據武器類型不同)
-        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 35;
+        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 20;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y + ry, player.size)) {
