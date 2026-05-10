@@ -275,13 +275,15 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 height: 100vh;
                 max-width: calc(100vh * 16 / 9);
                 max-height: calc(100vw * 9 / 16);
-                margin: auto;
+                margin: 0 auto;
                 box-sizing: border-box;
                 border: none;
                 /* 確保在安全區域內，為Safari網址欄和導航欄留出更多空間 */
                 max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 80px);
                 max-width: calc(100vw - 30px);
                 transform: scale(0.92);
+                top: env(safe-area-inset-top);
+                transform-origin: top center;
             }
             #sidebar {
                 width: 30vw;
