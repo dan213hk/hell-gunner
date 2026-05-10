@@ -4098,11 +4098,11 @@ border-radius: 50%; top: 20px; left: 20px;
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
         
-        // 強制處理側邊欄的所有觸控，不進行UI檢查
+        // 側邊欄觸控：完全跳過UI檢查，直接處理
         if (isInSidebar) {
-            // 側邊欄觸控直接處理，跳過UI檢查
+            // 側邊欄觸控直接處理，不做任何檢查
         } else {
-            // 非側邊欄區域檢查UI元素
+            // 非側邊欄區域：檢查UI元素
             if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
                 target.closest('button') || target.closest('a') ||
                 target.classList.contains('ui-element') ||
@@ -4256,19 +4256,28 @@ border-radius: 50%; top: 20px; left: 20px;
         }
     }
 
-    // 在canvas和側邊欄上添加事件監聽器
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd);
-    canvas.addEventListener('touchcancel', handleTouchEnd); // 添加touchcancel支持
+    // 在canvas和側邊欄上添加事件監聽器，使用捕獲階段確保優先處理
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    canvas.addEventListener('touchend', handleTouchEnd, { capture: true });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { capture: true });
 
     // 為側邊欄添加觸控事件監聽器，支持右搖桿控制
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
-        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
-        sidebar.addEventListener('touchend', handleTouchEnd);
-        sidebar.addEventListener('touchcancel', handleTouchEnd);
+        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+        sidebar.addEventListener('touchend', handleTouchEnd, { capture: true });
+        sidebar.addEventListener('touchcancel', handleTouchEnd, { capture: true });
+        
+        // 為側邊欄內的所有子元素也添加事件監聽器
+        const sidebarElements = sidebar.querySelectorAll('*');
+        sidebarElements.forEach(element => {
+            element.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+            element.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+            element.addEventListener('touchend', handleTouchEnd, { capture: true });
+            element.addEventListener('touchcancel', handleTouchEnd, { capture: true });
+        });
     }
 
     // 添加全局錯誤恢復機制
