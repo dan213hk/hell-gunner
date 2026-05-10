@@ -4091,27 +4091,33 @@ border-radius: 50%; top: 20px; left: 20px;
         originalUpdate();
     };
 
-    // 4. 事件監聽 - 改進的Multi-Touch支持
+    // 4. 極端觸控事件處理 - 完全重寫
     function handleTouchStart(e) {
-        // 檢查是否點擊了按鈕或其他UI元素
+        // 立即阻止默認行為
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 只有在遊戲開始後才啟用搖桿
+        if (!document.body.classList.contains('game-started')) {
+            return;
+        }
+        
+        // 檢查是否點擊了按鈕或其他UI元素（但側邊欄除外）
         const target = e.target;
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
         
-        // 側邊欄觸控：完全跳過UI檢查，直接處理
-        if (isInSidebar) {
-            // 側邊欄觸控直接處理，不做任何檢查
-        } else {
-            // 非側邊欄區域：檢查UI元素
-            if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
-                target.closest('button') || target.closest('a') ||
-                target.classList.contains('ui-element') ||
-                target.closest('#mobile-action-buttons')) {
-                return; // 不處理UI元素的觸控事件
-            }
+        // 如果不是側邊欄且是UI元素，直接返回
+        if (!isInSidebar && (
+            target.tagName === 'BUTTON' || target.tagName === 'A' || 
+            target.closest('button') || target.closest('a') ||
+            target.classList.contains('ui-element') ||
+            target.closest('#mobile-action-buttons')
+        )) {
+            return;
         }
         
-        // 檢查所有觸控點，包括側邊欄的觸控
+        // 處理所有觸控點
         for (let t of e.changedTouches) {
             // 檢查這個觸控ID是否已經被使用
             let alreadyAssigned = false;
@@ -4123,33 +4129,38 @@ border-radius: 50%; top: 20px; left: 20px;
             
             if (alreadyAssigned) continue;
             
-            // 確定觸控位置和分配邏輯
+            // 極端簡化的分配邏輯
             let side, ctrl, dom;
             
             if (isInSidebar) {
-                // 側邊欄觸控強制分配為右搖桿
+                // 側邊欄任何觸控都分配為右搖桿
                 side = 'right';
                 ctrl = controls.right;
                 dom = rStick;
             } else {
-                // 正常區域分配：左側移動，右側射擊
-                const screenWidth = window.innerWidth;
-                const threshold = screenWidth * 0.5;
-                side = t.clientX < threshold ? 'left' : 'right';
+                // 正常區域：簡單的左右分配
+                side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
                 ctrl = controls[side];
                 dom = side === 'left' ? lStick : rStick;
             }
 
-            // 如果該側搖桿已經被激活，跳過
-            if (ctrl.active) continue;
+            // 如果該側搖桿已經被激活，強制重置並重新分配
+            if (ctrl.active) {
+                ctrl.active = false;
+                ctrl.id = -1;
+                ctrl.moveX = 0; ctrl.moveY = 0;
+                dom.style.display = 'none';
+                dom.querySelector('.stick-knob').style.transform = `translate(0,0)`;
+            }
 
             // 分配觸控到搖桿
             ctrl.active = true;
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
             ctrl.startY = t.clientY;
-            ctrl.lastMoveTime = Date.now(); // 初始化移動時間戳
+            ctrl.lastMoveTime = Date.now();
 
+            // 顯示搖桿
             dom.style.display = 'block';
             if (side === 'left') {
                 dom.style.left = `${t.clientX - 40}px`;
@@ -4161,12 +4172,6 @@ border-radius: 50%; top: 20px; left: 20px;
             dom.style.top = `${t.clientY - 40}px`;
             
             vibrate(30);
-        }
-        
-        e.preventDefault();
-        // 只有在遊戲開始後才啟用搖桿
-        if (!document.body.classList.contains('game-started')) {
-            return;
         }
     }
 
