@@ -271,34 +271,33 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             }
             #game-container {
                 position: relative;
-                width: 85vw;
-                height: 65vh;
-                max-width: calc(65vh * 16 / 9);
-                max-height: calc(85vw * 9 / 16);
+                width: 100vw;
+                height: 100vh;
+                max-width: calc(100vh * 16 / 9);
+                max-height: calc(100vw * 9 / 16);
                 margin: auto;
                 box-sizing: border-box;
                 border: none;
-                transform: scale(0.75);
                 /* 確保在安全區域內 */
-                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 60px);
-                max-width: calc(100vw - 40px);
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+                max-width: calc(100vw - 20px);
             }
             #sidebar {
-                width: 25vw;
-                min-width: 80px;
-                max-width: 150px;
-                padding: 0.5vw;
+                width: 30vw;
+                min-width: 100px;
+                max-width: 180px;
+                padding: 0.8vw;
                 order: 2;
             }
             #sidebar .label {
-                font-size: 0.9vw;
-                letter-spacing: 0.5px;
+                font-size: 1.1vw;
+                letter-spacing: 0.8px;
             }
             #sidebar .value {
-                font-size: 1.5vw;
+                font-size: 1.8vw;
             }
             #sidebar .task-list {
-                font-size: 1.2vw;
+                font-size: 1.5vw;
             }
             canvas {
                 width: 100%;
@@ -308,35 +307,35 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 display: none;
             }
             #radar-overlay {
-                top: 10px;
-                right: 10px;
-                width: 100px;
-                height: 75px;
+                top: 15px;
+                right: 15px;
+                width: 120px;
+                height: 90px;
             }
             #survival-timer-overlay {
-                top: 10px !important;
-                right: 120px !important;
-                font-size: 14px !important;
+                top: 15px !important;
+                right: 145px !important;
+                font-size: 16px !important;
             }
             #mobile-action-buttons {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 25px !important;
-                right: 25px !important;
+                bottom: 30px !important;
+                right: 30px !important;
                 top: auto !important;
                 transform: none !important;
                 z-index: 10003 !important;
                 flex-direction: column !important;
-                gap: 18px !important;
+                gap: 20px !important;
             }
             .mobile-action-btn {
-                width: 60px !important;
-                height: 60px !important;
+                width: 70px !important;
+                height: 70px !important;
                 border-radius: 50% !important;
                 border: 3px solid #ff0000 !important;
                 background: rgba(0, 0, 0, 0.95) !important;
                 color: #ff0000 !important;
-                font-size: 24px !important;
+                font-size: 28px !important;
                 font-weight: bold !important;
                 cursor: pointer !important;
                 display: flex !important;
@@ -346,7 +345,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 -webkit-user-select: none !important;
                 touch-action: none !important;
                 pointer-events: auto !important;
-                box-shadow: 0 3px 12px rgba(255, 0, 0, 0.6) !important;
+                box-shadow: 0 4px 16px rgba(255, 0, 0, 0.7) !important;
             }
         }
         #mobile-controls-info {
@@ -3520,22 +3519,22 @@ function startGame() {
         if (mobileActionButtons) {
             mobileActionButtons.style.display = 'flex';
             mobileActionButtons.style.position = 'fixed';
-            mobileActionButtons.style.bottom = '25px';
-            mobileActionButtons.style.right = '25px';
+            mobileActionButtons.style.bottom = '30px';
+            mobileActionButtons.style.right = '30px';
             mobileActionButtons.style.zIndex = '10003';
             mobileActionButtons.style.flexDirection = 'column';
-            mobileActionButtons.style.gap = '18px';
+            mobileActionButtons.style.gap = '20px';
             
             const buttons = mobileActionButtons.querySelectorAll('.mobile-action-btn');
             buttons.forEach(btn => {
                 btn.style.display = 'flex';
-                btn.style.width = '60px';
-                btn.style.height = '60px';
+                btn.style.width = '70px';
+                btn.style.height = '70px';
                 btn.style.borderRadius = '50%';
                 btn.style.border = '3px solid #ff0000';
                 btn.style.background = 'rgba(0, 0, 0, 0.95)';
                 btn.style.color = '#ff0000';
-                btn.style.fontSize = '24px';
+                btn.style.fontSize = '28px';
                 btn.style.fontWeight = 'bold';
                 btn.style.alignItems = 'center';
                 btn.style.justifyContent = 'center';
@@ -3543,7 +3542,7 @@ function startGame() {
                 btn.style.webkitUserSelect = 'none';
                 btn.style.touchAction = 'none';
                 btn.style.pointerEvents = 'auto';
-                btn.style.boxShadow = '0 3px 12px rgba(255, 0, 0, 0.6)';
+                btn.style.boxShadow = '0 4px 16px rgba(255, 0, 0, 0.7)';
             });
         }
     }, 100);
@@ -4908,24 +4907,24 @@ function setupMobileButtons() {
     if (mobileActionButtons) {
         mobileActionButtons.style.display = 'flex';
         mobileActionButtons.style.position = 'fixed';
-        mobileActionButtons.style.bottom = '25px';
-        mobileActionButtons.style.right = '25px';
+        mobileActionButtons.style.bottom = '30px';
+        mobileActionButtons.style.right = '30px';
         mobileActionButtons.style.zIndex = '10003';
         mobileActionButtons.style.flexDirection = 'column';
-        mobileActionButtons.style.gap = '18px';
+        mobileActionButtons.style.gap = '20px';
     }
     
     // 強制設置按鈕樣式
     [btnSwitch, btnGrenade, btnDodge].forEach(btn => {
         if (btn) {
             btn.style.display = 'flex';
-            btn.style.width = '60px';
-            btn.style.height = '60px';
+            btn.style.width = '70px';
+            btn.style.height = '70px';
             btn.style.borderRadius = '50%';
             btn.style.border = '3px solid #ff0000';
             btn.style.background = 'rgba(0, 0, 0, 0.95)';
             btn.style.color = '#ff0000';
-            btn.style.fontSize = '24px';
+            btn.style.fontSize = '28px';
             btn.style.fontWeight = 'bold';
             btn.style.alignItems = 'center';
             btn.style.justifyContent = 'center';
@@ -4933,7 +4932,7 @@ function setupMobileButtons() {
             btn.style.webkitUserSelect = 'none';
             btn.style.touchAction = 'none';
             btn.style.pointerEvents = 'auto';
-            btn.style.boxShadow = '0 3px 12px rgba(255, 0, 0, 0.6)';
+            btn.style.boxShadow = '0 4px 16px rgba(255, 0, 0, 0.7)';
         }
     });
 
