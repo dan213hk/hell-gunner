@@ -1214,6 +1214,11 @@ function resizeCanvas() {
         canvas.height = 750;
         WORLD = { width: 3200, height: 2400 };
     }
+    
+    // 重新生成地圖以適應新的尺寸
+    if (typeof generateStaticMap === 'function') {
+        generateStaticMap();
+    }
 }
 
 // 初始化canvas尺寸
