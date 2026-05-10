@@ -1199,9 +1199,25 @@ const ctx = canvas.getContext('2d');
 const radarCanvas = document.getElementById('radarCanvas');
 const rctx = radarCanvas.getContext('2d');
 
-canvas.width = 1000;
-canvas.height = 750;
-const WORLD = { width: 3200, height: 2400 };
+// 根據設備動態調整canvas尺寸
+function resizeCanvas() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // 手機版：使用較小的尺寸以提高性能
+        canvas.width = 800;
+        canvas.height = 600;
+        WORLD = { width: 2400, height: 1800 };
+    } else {
+        // 桌面版：使用較大的尺寸
+        canvas.width = 1000;
+        canvas.height = 750;
+        WORLD = { width: 3200, height: 2400 };
+    }
+}
+
+// 初始化canvas尺寸
+resizeCanvas();
 
 let startPos = { x: 400, y: 350 }; // 初始第一關的地點
 let level = 1;
@@ -4160,16 +4176,26 @@ border-radius: 50%; top: 20px; left: 20px;
             ctrl.startY = t.clientY;
             ctrl.lastMoveTime = Date.now();
 
-            // 顯示搖桿
+            // 顯示搖桿 - 使用相對座標以避免畫面大小問題
+            const rect = canvas.getBoundingClientRect();
+            const canvasLeft = rect.left;
+            const canvasTop = rect.top;
+            const canvasWidth = rect.width;
+            const canvasHeight = rect.height;
+            
+            // 計算相對於canvas的座標
+            const relativeX = t.clientX - canvasLeft;
+            const relativeY = t.clientY - canvasTop;
+            
             dom.style.display = 'block';
             if (side === 'left') {
-                dom.style.left = `${t.clientX - 40}px`;
+                dom.style.left = `${relativeX - 40}px`;
                 dom.style.right = 'auto';
             } else {
                 dom.style.left = 'auto';
-                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
+                dom.style.right = `${canvasWidth - relativeX - 40}px`;
             }
-            dom.style.top = `${t.clientY - 40}px`;
+            dom.style.top = `${relativeY - 40}px`;
             
             vibrate(30);
         }
@@ -4177,12 +4203,17 @@ border-radius: 50%; top: 20px; left: 20px;
 
     function handleTouchMove(e) {
         e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const canvasLeft = rect.left;
+        const canvasTop = rect.top;
+        
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
                 if (ctrl.active && ctrl.id === t.identifier) {
-                    let mx = t.clientX - ctrl.startX;
-                    let my = t.clientY - ctrl.startY;
+                    // 使用相對於canvas的座標
+                    let mx = (t.clientX - canvasLeft) - ctrl.startX;
+                    let my = (t.clientY - canvasTop) - ctrl.startY;
                     const dist = Math.hypot(mx, my);
                     const limit = 40;
 
