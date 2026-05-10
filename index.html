@@ -4091,16 +4091,18 @@ border-radius: 50%; top: 20px; left: 20px;
     function handleTouchStart(e) {
         // 檢查是否點擊了按鈕或其他UI元素
         const target = e.target;
-        if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
-            target.closest('button') || target.closest('a') ||
-            target.classList.contains('ui-element') ||
-            target.closest('#mobile-action-buttons')) {
-            return; // 不處理UI元素的觸控事件
-        }
-        
-        // 檢查是否在側邊欄區域 - 如果是，強制分配為右搖桿
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
+        
+        // 只在非側邊欄區域檢查UI元素，側邊欄允許觸控
+        if (!isInSidebar && (
+            target.tagName === 'BUTTON' || target.tagName === 'A' || 
+            target.closest('button') || target.closest('a') ||
+            target.classList.contains('ui-element') ||
+            target.closest('#mobile-action-buttons')
+        )) {
+            return; // 不處理UI元素的觸控事件
+        }
         
         // 檢查所有觸控點，包括側邊欄的觸控
         for (let t of e.changedTouches) {
