@@ -109,14 +109,13 @@
             padding: 0;
         }
         #game-container { display: flex; flex-direction: row; flex-wrap: nowrap; border: 4px solid #4a0000; box-shadow: 0 0 50px rgba(255,0,0,0.5); background: #150505; width: 100vw; height: 100vh; max-width: calc(100vh * 16 / 9); max-height: calc(100vw * 9 / 16); box-sizing: border-box; }
-        canvas { background: #1a0a0a; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; object-fit: contain; position: relative; }
-        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #2a0a0a; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; order: 2; touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        canvas { background: #1a0a0a; display: block; cursor: crosshair !important; touch-action: none; flex: 1; min-width: 0; height: 100%; width: 100%; order: 1; object-fit: contain; }
+        #sidebar { width: 20vw; min-width: 120px; max-width: 250px; background: #2a0a0a; border-left: 4px solid #4a0000; padding: 1.5vw; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; order: 2; }
         .ui-box { width: 100%; margin-bottom: 2vh; flex-shrink: 0; }
         .label { font-size: 0.8vw; color: #880000; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; border-bottom: 1px solid #440000; padding-bottom: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .value { font-size: 1.5vw; font-weight: bold; margin-top: 5px; color: #ff3333; }
         #radar-container { width: 80%; height: 15vh; border: none; background: #1a0a0a; margin: 1vh auto; position: relative; overflow: hidden; flex-shrink: 0; }
-        #radar-overlay { position: absolute; top: 20px; right: 20px; width: 200px; height: 150px; background: rgba(26, 10, 10, 0.8); border: none; overflow: hidden; z-index: 100; pointer-events: none; display: none; border-radius: 5px; }
-body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
+        #radar-overlay { position: absolute; top: 10px; left: 10px; width: 15vw; height: calc(15vw * 0.75); background: #1a0a0a; border: none; overflow: hidden; z-index: 100; pointer-events: none; display: none; }
         #radarCanvas { width: 100%; height: 100%; }
         #radar-ping-label { position: absolute; top: 5px; left: 5px; color: #0f0; font-size: 12px; opacity: 0; transition: 0.5s; pointer-events: none; }
         .hp-bar-bg { width: 100%; height: 1vh; background: #200; border: 1px solid #700; margin-top: 0.8vh; }
@@ -253,48 +252,38 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             .task-list { font-size: 1.2vw; }
             .controls { font-size: 0.9vw; }
         }
-        @media screen and (max-width: 1024px) {
-            body {
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                width: 100vw;
-            }
+        @media screen and (max-width: 768px) {
             #game-container {
                 position: relative;
                 width: 100vw;
                 height: 100vh;
-                max-width: none;
-                max-height: none;
+                max-width: calc(100vh * 16 / 9);
+                max-height: calc(100vw * 9 / 16);
+                margin: 0;
                 box-sizing: border-box;
                 border: none;
-                transform: scale(1);
-                transform-origin: center center;
+            }
+            body {
+                height: 100vh;
+                padding: 0;
+                margin: 0;
             }
             #sidebar {
                 width: 25vw;
                 min-width: 80px;
-                max-width: 160px;
-                padding: 0.8vw;
+                max-width: 150px;
+                padding: 0.5vw;
                 order: 2;
-                touch-action: manipulation;
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                user-select: none;
             }
             #sidebar .label {
-                font-size: 0.7vw;
-                letter-spacing: 0.3px;
+                font-size: 1.2vw;
+                letter-spacing: 1px;
             }
             #sidebar .value {
-                font-size: 1.1vw;
+                font-size: 2vw;
             }
             #sidebar .task-list {
-                font-size: 0.9vw;
+                font-size: 1.5vw;
             }
             canvas {
                 width: 100%;
@@ -302,47 +291,6 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             }
             .controls {
                 display: none;
-            }
-            #radar-overlay {
-                top: 12px;
-                right: 12px;
-                width: 120px;
-                height: 90px;
-            }
-            #survival-timer-overlay {
-                top: 12px !important;
-                right: 142px !important;
-                font-size: 14px !important;
-            }
-            #mobile-action-buttons {
-                display: flex !important;
-                position: fixed !important;
-                bottom: 80px !important;
-                right: 20px !important;
-                top: auto !important;
-                transform: none !important;
-                z-index: 9999 !important;
-                flex-direction: column !important;
-                gap: 15px !important;
-            }
-            .mobile-action-btn {
-                width: 55px !important;
-                height: 55px !important;
-                border-radius: 50% !important;
-                border: 3px solid #ff0000 !important;
-                background: rgba(0, 0, 0, 0.95) !important;
-                color: #ff0000 !important;
-                font-size: 22px !important;
-                font-weight: bold !important;
-                cursor: pointer !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                user-select: none !important;
-                -webkit-user-select: none !important;
-                touch-action: none !important;
-                pointer-events: auto !important;
-                box-shadow: 0 3px 12px rgba(255, 0, 0, 0.6) !important;
             }
         }
         #mobile-controls-info {
@@ -354,7 +302,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             padding: 0 20px;
             line-height: 1.6;
         }
-        @media screen and (max-width: 1024px) {
+        @media screen and (max-width: 768px) {
             #mobile-controls-info {
                 display: block;
             }
@@ -389,7 +337,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
         .mobile-action-btn:active {
             background: rgba(255, 0, 0, 0.3);
         }
-        @media screen and (max-width: 1024px) {
+        @media screen and (max-width: 768px) {
             #mobile-action-buttons {
                 display: flex;
             }
@@ -402,7 +350,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             display: none !important;
         }
         /* 強制在電腦上隱藏手機控制按鈕 */
-        @media screen and (min-width: 1025px) {
+        @media screen and (min-width: 769px) {
             #mobile-action-buttons {
                 display: none !important;
             }
@@ -457,13 +405,7 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
     <button class="mobile-action-btn" id="btn-dodge">↻</button>
 </div>
 <div id="game-container">
-    <div style="position: relative; flex: 1; min-width: 0;">
-        <canvas id="gameCanvas"></canvas>
-        <div id="radar-overlay">
-            <div id="radar-ping-label">SCANNING...</div>
-            <canvas id="radarCanvas" width="240" height="180"></canvas>
-        </div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
     <div id="sidebar">
         <div class="ui-box">
             <div class="label">生命特徵 (BIO-SIGNAL)</div>
@@ -494,6 +436,10 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             </div>
         </div>
     </div>
+</div>
+<div id="radar-overlay">
+    <div id="radar-ping-label">SCANNING...</div>
+    <canvas id="radarCanvas" width="240" height="180"></canvas>
 </div>
 
 <script>
@@ -1199,30 +1145,9 @@ const ctx = canvas.getContext('2d');
 const radarCanvas = document.getElementById('radarCanvas');
 const rctx = radarCanvas.getContext('2d');
 
-// 根據設備動態調整canvas尺寸
-function resizeCanvas() {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        // 手機版：使用較小的尺寸以提高性能
-        canvas.width = 800;
-        canvas.height = 600;
-        WORLD = { width: 2400, height: 1800 };
-    } else {
-        // 桌面版：使用較大的尺寸
-        canvas.width = 1000;
-        canvas.height = 750;
-        WORLD = { width: 3200, height: 2400 };
-    }
-    
-    // 重新生成地圖以適應新的尺寸
-    if (typeof generateStaticMap === 'function') {
-        generateStaticMap();
-    }
-}
-
-// 初始化canvas尺寸
-resizeCanvas();
+canvas.width = 1000;
+canvas.height = 750;
+const WORLD = { width: 3200, height: 2400 };
 
 let startPos = { x: 400, y: 350 }; // 初始第一關的地點
 let level = 1;
@@ -1629,7 +1554,7 @@ function fireShotgun() {
         }
 
         // --- 新增：玩家後座力 ---
-        let recoilDist = 25;
+        let recoilDist = 50;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y, player.size)) player.x += rx;
@@ -3530,41 +3455,6 @@ function startGame() {
 
     // 7. 立即啟動遊戲循環
     gameStarted = true;
-    
-    // 強制顯示手機按鈕
-    setTimeout(() => {
-        const mobileActionButtons = document.getElementById('mobile-action-buttons');
-        if (mobileActionButtons) {
-            mobileActionButtons.style.display = 'flex';
-            mobileActionButtons.style.position = 'fixed';
-            mobileActionButtons.style.bottom = '80px';
-            mobileActionButtons.style.right = '20px';
-            mobileActionButtons.style.zIndex = '9999';
-            mobileActionButtons.style.flexDirection = 'column';
-            mobileActionButtons.style.gap = '15px';
-            
-            const buttons = mobileActionButtons.querySelectorAll('.mobile-action-btn');
-            buttons.forEach(btn => {
-                btn.style.display = 'flex';
-                btn.style.width = '60px';
-                btn.style.height = '60px';
-                btn.style.borderRadius = '50%';
-                btn.style.border = '3px solid #ff0000';
-                btn.style.background = 'rgba(0, 0, 0, 0.95)';
-                btn.style.color = '#ff0000';
-                btn.style.fontSize = '24px';
-                btn.style.fontWeight = 'bold';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.style.userSelect = 'none';
-                btn.style.webkitUserSelect = 'none';
-                btn.style.touchAction = 'none';
-                btn.style.pointerEvents = 'auto';
-                btn.style.boxShadow = '0 3px 12px rgba(255, 0, 0, 0.6)';
-            });
-        }
-    }, 100);
-    
     loop();
 }
 
@@ -4035,30 +3925,28 @@ function restartGame() {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (!isMobile) return;
 
-// 1. 插入搖桿樣式
-const style = document.createElement('style');
-style.textContent = `
-#joystick-container {
-display: none;
-}
-body.game-started #joystick-container {
-display: block;
-}
-.stick {
-position: absolute; width: 80px; height: 80px;
-background: rgba(255, 255, 255, 0.1);
-border: 2px solid rgba(255, 0, 0, 0.3);
-border-radius: 50%; bottom: 50px; pointer-events: none;
-display: none;
-}
-.stick-knob {
-position: absolute; width: 40px; height: 40px;
-background: rgba(255, 0, 0, 0.5);
-border-radius: 50%; top: 20px; left: 20px;
-}
-#left-stick { left: 50px; }
-#right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
-#right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
+    // 1. 插入搖桿樣式
+    const style = document.createElement('style');
+    style.innerHTML = `
+        #joystick-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 1000;
+        }
+        .stick {
+            position: absolute; width: 80px; height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            border-radius: 50%; bottom: 50px; pointer-events: none;
+            display: none;
+        }
+        .stick-knob {
+            position: absolute; width: 40px; height: 40px;
+            background: rgba(255, 0, 0, 0.5);
+            border-radius: 50%; top: 20px; left: 20px;
+        }
+        #left-stick { left: 50px; }
+        #right-stick { right: 50px; border-color: rgba(0, 200, 255, 0.3); }
+        #right-stick .stick-knob { background: rgba(0, 200, 255, 0.5); }
     `;
     document.head.appendChild(style);
 
@@ -4112,124 +4000,35 @@ border-radius: 50%; top: 20px; left: 20px;
         originalUpdate();
     };
 
-    // 4. 最極端解決方案 - 專用側邊欄觸控處理器
+    // 4. 事件監聽
     function handleTouchStart(e) {
-        // 立即阻止默認行為
         e.preventDefault();
-        e.stopPropagation();
-        
-        // 只有在遊戲開始後才啟用搖桿
-        if (!document.body.classList.contains('game-started')) {
-            return;
-        }
-        
-        // 檢查是否在側邊欄
-        const target = e.target;
-        const sidebar = document.getElementById('sidebar');
-        const isInSidebar = sidebar && sidebar.contains(target);
-        
-        // 側邊欄：使用專用處理器，完全繞過所有檢查
-        if (isInSidebar) {
-            // 直接處理側邊欄觸控，不做任何檢查
-            for (let t of e.changedTouches) {
-                // 檢查觸控ID是否已經被使用
-                if (controls.right.id === t.identifier) continue;
-                
-                // 強制重置右搖桿
-                if (controls.right.active) {
-                    controls.right.active = false;
-                    controls.right.id = -1;
-                    controls.right.moveX = 0;
-                    controls.right.moveY = 0;
-                    rStick.style.display = 'none';
-                    rKnob.style.transform = `translate(0,0)`;
-                }
-                
-                // 分配右搖桿
-                controls.right.active = true;
-                controls.right.id = t.identifier;
-                controls.right.startX = t.clientX;
-                controls.right.startY = t.clientY;
-                controls.right.lastMoveTime = Date.now();
-                
-                // 顯示右搖桿
-                rStick.style.display = 'block';
-                rStick.style.position = 'fixed';
-                rStick.style.left = 'auto';
-                rStick.style.right = `${window.innerWidth - t.clientX - 40}px`;
-                rStick.style.top = `${t.clientY - 40}px`;
-                
-                vibrate(30);
-            }
-            return; // 側邊欄處理完成
-        }
-        
-        // 非側邊欄：檢查UI元素
-        if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
-            target.closest('button') || target.closest('a') ||
-            target.classList.contains('ui-element') ||
-            target.closest('#mobile-action-buttons')) {
-            return;
-        }
-        
-        // 正常區域處理
         for (let t of e.changedTouches) {
-            // 檢查觸控ID是否已經被使用
-            let alreadyAssigned = false;
-            ['left', 'right'].forEach(side => {
-                if (controls[side].id === t.identifier) {
-                    alreadyAssigned = true;
-                }
-            });
-            
-            if (alreadyAssigned) continue;
-            
-            // 簡單分配邏輯
             const side = t.clientX < window.innerWidth / 2 ? 'left' : 'right';
             const ctrl = controls[side];
             const dom = side === 'left' ? lStick : rStick;
 
-            // 如果該側搖桿已經被激活，強制重置
-            if (ctrl.active) {
-                ctrl.active = false;
-                ctrl.id = -1;
-                ctrl.moveX = 0; ctrl.moveY = 0;
-                dom.style.display = 'none';
-                dom.querySelector('.stick-knob').style.transform = `translate(0,0)`;
-            }
-
-            // 分配觸控到搖桿
             ctrl.active = true;
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
             ctrl.startY = t.clientY;
-            ctrl.lastMoveTime = Date.now();
 
-            // 顯示搖桿
             dom.style.display = 'block';
-            dom.style.position = 'fixed';
-            
-            if (side === 'left') {
-                dom.style.left = `${t.clientX - 40}px`;
-                dom.style.right = 'auto';
-            } else {
-                dom.style.left = 'auto';
-                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
-            }
+            dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
+            dom.style.right = side === 'right' ? `${window.innerWidth - t.clientX - 40}px` : 'auto';
             dom.style.top = `${t.clientY - 40}px`;
             
+            // 搖桿觸摸震動效果
             vibrate(30);
         }
     }
 
     function handleTouchMove(e) {
         e.preventDefault();
-        
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
                 if (ctrl.active && ctrl.id === t.identifier) {
-                    // 使用絕對座標計算相對移動
                     let mx = t.clientX - ctrl.startX;
                     let my = t.clientY - ctrl.startY;
                     const dist = Math.hypot(mx, my);
@@ -4241,9 +4040,6 @@ border-radius: 50%; top: 20px; left: 20px;
                     }
                     ctrl.moveX = mx;
                     ctrl.moveY = my;
-                    
-                    // 更新最後移動時間，防止被誤判為卡住
-                    ctrl.lastMoveTime = Date.now();
 
                     const knob = side === 'left' ? lKnob : rKnob;
                     knob.style.transform = `translate(${mx}px, ${my}px)`;
@@ -4253,7 +4049,6 @@ border-radius: 50%; top: 20px; left: 20px;
     }
 
     function handleTouchEnd(e) {
-        // 處理每個結束的觸控點
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
@@ -4271,137 +4066,19 @@ border-radius: 50%; top: 20px; left: 20px;
                 }
             });
         }
-        
-        // 增強的安全檢查：如果所有觸控都結束了，確保搖桿都被重置
-        if (e.touches.length === 0) {
-            ['left', 'right'].forEach(side => {
-                const ctrl = controls[side];
-                if (ctrl.active) {
-                    console.warn(`強制重置${side}搖桿狀態`);
-                    ctrl.active = false;
-                    ctrl.id = -1;
-                    ctrl.moveX = 0; ctrl.moveY = 0;
-                    const dom = side === 'left' ? lStick : rStick;
-                    const knob = side === 'left' ? lKnob : rKnob;
-                    dom.style.display = 'none';
-                    knob.style.transform = `translate(0,0)`;
-                }
-            });
-        } else {
-            // 部分觸控結束時，檢查是否有孤立的觸控ID
-            const activeTouchIds = new Set();
-            for (let t of e.touches) {
-                activeTouchIds.add(t.identifier);
-            }
-            
-            ['left', 'right'].forEach(side => {
-                const ctrl = controls[side];
-                if (ctrl.active && !activeTouchIds.has(ctrl.id)) {
-                    console.warn(`清理孤立觸控ID ${ctrl.id} 從 ${side} 搖桿`);
-                    ctrl.active = false;
-                    ctrl.id = -1;
-                    ctrl.moveX = 0; ctrl.moveY = 0;
-                    const dom = side === 'left' ? lStick : rStick;
-                    const knob = side === 'left' ? lKnob : rKnob;
-                    dom.style.display = 'none';
-                    knob.style.transform = `translate(0,0)`;
-                }
-            });
-        }
     }
 
-    // 在canvas和側邊欄上添加事件監聽器，使用捕獲階段確保優先處理
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
-    canvas.addEventListener('touchend', handleTouchEnd, { capture: true });
-    canvas.addEventListener('touchcancel', handleTouchEnd, { capture: true });
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
 
-    // 為側邊欄添加觸控事件監聽器，支持右搖桿控制
+    // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
-        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
-        sidebar.addEventListener('touchend', handleTouchEnd, { capture: true });
-        sidebar.addEventListener('touchcancel', handleTouchEnd, { capture: true });
-        
-        // 為側邊欄內的所有子元素也添加事件監聽器
-        const sidebarElements = sidebar.querySelectorAll('*');
-        sidebarElements.forEach(element => {
-            element.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
-            element.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
-            element.addEventListener('touchend', handleTouchEnd, { capture: true });
-            element.addEventListener('touchcancel', handleTouchEnd, { capture: true });
-        });
+        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
+        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
+        sidebar.addEventListener('touchend', handleTouchEnd);
     }
-
-    // 添加全局錯誤恢復機制
-    function resetAllJoysticks() {
-        console.warn('執行全局搖桿重置');
-        ['left', 'right'].forEach(side => {
-            const ctrl = controls[side];
-            ctrl.active = false;
-            ctrl.id = -1;
-            ctrl.moveX = 0; ctrl.moveY = 0;
-            const dom = side === 'left' ? lStick : rStick;
-            const knob = side === 'left' ? lKnob : rKnob;
-            dom.style.display = 'none';
-            knob.style.transform = `translate(0,0)`;
-        });
-    }
-
-    // 定期檢查和清理搖桿狀態
-    setInterval(() => {
-        if (!document.body.classList.contains('game-started')) {
-            resetAllJoysticks();
-            return;
-        }
-        
-        // 檢查是否有孤立的搖桿狀態
-        let hasActiveJoysticks = false;
-        ['left', 'right'].forEach(side => {
-            if (controls[side].active) {
-                hasActiveJoysticks = true;
-            }
-        });
-        
-        // 如果有搖桿激活但沒有觸控點，強制重置
-        if (hasActiveJoysticks && 'touches' in navigator && navigator.touches.length === 0) {
-            resetAllJoysticks();
-        }
-        
-        // 特別檢查右搖桿卡住問題
-        if (controls.right.active) {
-            // 檢查右搖桿是否長時間沒有移動（可能卡住）
-            const now = Date.now();
-            if (!controls.right.lastMoveTime) {
-                controls.right.lastMoveTime = now;
-            } else if (now - controls.right.lastMoveTime > 2000) {
-                // 如果右搖桿超過2秒沒有移動且仍然激活，可能卡住了
-                console.warn('右搖桿可能卡住，強制重置');
-                const ctrl = controls.right;
-                ctrl.active = false;
-                ctrl.id = -1;
-                ctrl.moveX = 0; ctrl.moveY = 0;
-                ctrl.lastMoveTime = null;
-                rStick.style.display = 'none';
-                rKnob.style.transform = `translate(0,0)`;
-            }
-        }
-        
-        // 調試信息（可選）
-        if (window.DEBUG_JOYSTICK) {
-            const debugInfo = {
-                left: { active: controls.left.active, id: controls.left.id, x: Math.round(controls.left.moveX), y: Math.round(controls.left.moveY) },
-                right: { active: controls.right.active, id: controls.right.id, x: Math.round(controls.right.moveX), y: Math.round(controls.right.moveY) },
-                touches: 'touches' in navigator ? navigator.touches.length : 'N/A',
-                rightStuck: controls.right.active && (Date.now() - (controls.right.lastMoveTime || Date.now())) > 2000
-            };
-            console.log('搖桿狀態:', debugInfo);
-        }
-    }, 1000); // 每秒檢查一次
-
-    // 全局調試開關（可在控制台設置 window.DEBUG_JOYSTICK = true 來啟用）
-    window.DEBUG_JOYSTICK = false;
 
     // 5. 視覺優化：隱藏側邊欄以增加手機視野
     // 已移除，改用 CSS media query 處理
@@ -4526,7 +4203,7 @@ border-radius: 50%; top: 20px; left: 20px;
         if (typeof playSound === 'function') playSound('shot', player.wepType);
 
         // 後坐力 (根據武器類型不同)
-        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 20;
+        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 35;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y + ry, player.size)) {
@@ -4718,8 +4395,8 @@ border-radius: 50%; top: 20px; left: 20px;
     timerDiv.id = 'survival-timer-overlay';
     timerDiv.style.cssText = `
         position: absolute;
-        top: 20px;
-        right: 240px;
+        top: 10px;
+        left: calc(15vw + 20px);
         padding: 8px 12px;
         background: rgba(0, 0, 0, 0.7);
         color: #0f4;
@@ -4733,18 +4410,7 @@ border-radius: 50%; top: 20px; left: 20px;
         display: none;
         text-shadow: 0 0 5px #0f4;
     `;
-    // 將計時器添加到與雷達相同的包裝div中
-    const canvasWrapper = document.querySelector('#game-container > div[style*="position: relative"]');
-    if (canvasWrapper) {
-        canvasWrapper.appendChild(timerDiv);
-    } else {
-        const gameContainer = document.getElementById('game-container');
-        if (gameContainer) {
-            gameContainer.appendChild(timerDiv);
-        } else {
-            document.body.appendChild(timerDiv);
-        }
-    }
+    document.body.appendChild(timerDiv);
 
     let startTime = 0;
     let timerRunning = false;
@@ -4973,8 +4639,6 @@ function switchWeapon() {
     } while (nextType !== startType);
     
     if (nextType !== player.wepType) {
-        // 實際切換武器
-        player.wepType = nextType;
         // 更新UI
         updateUI();
         if (typeof playSound === 'function') playSound('weapon_switch');
@@ -5111,40 +4775,6 @@ function setupMobileButtons() {
     const btnSwitch = document.getElementById('btn-switch');
     const btnGrenade = document.getElementById('btn-grenade');
     const btnDodge = document.getElementById('btn-dodge');
-    const mobileActionButtons = document.getElementById('mobile-action-buttons');
-    
-    // 強制顯示手機按鈕
-    if (mobileActionButtons) {
-        mobileActionButtons.style.display = 'flex';
-        mobileActionButtons.style.position = 'fixed';
-        mobileActionButtons.style.bottom = '80px';
-        mobileActionButtons.style.right = '20px';
-        mobileActionButtons.style.zIndex = '9999';
-        mobileActionButtons.style.flexDirection = 'column';
-        mobileActionButtons.style.gap = '15px';
-    }
-    
-    // 強制設置按鈕樣式
-    [btnSwitch, btnGrenade, btnDodge].forEach(btn => {
-        if (btn) {
-            btn.style.display = 'flex';
-            btn.style.width = '60px';
-            btn.style.height = '60px';
-            btn.style.borderRadius = '50%';
-            btn.style.border = '3px solid #ff0000';
-            btn.style.background = 'rgba(0, 0, 0, 0.95)';
-            btn.style.color = '#ff0000';
-            btn.style.fontSize = '24px';
-            btn.style.fontWeight = 'bold';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.userSelect = 'none';
-            btn.style.webkitUserSelect = 'none';
-            btn.style.touchAction = 'none';
-            btn.style.pointerEvents = 'auto';
-            btn.style.boxShadow = '0 3px 12px rgba(255, 0, 0, 0.6)';
-        }
-    });
 
     if (btnSwitch) {
         btnSwitch.addEventListener('touchstart', (e) => {
