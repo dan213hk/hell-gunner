@@ -4102,44 +4102,7 @@ border-radius: 50%; top: 20px; left: 20px;
         const sidebar = document.getElementById('sidebar');
         const isInSidebar = sidebar && sidebar.contains(target);
         
-        // 如果在側邊欄且右搖桿未激活，強制分配為右搖桿
-        if (isInSidebar && !controls.right.active) {
-            for (let t of e.changedTouches) {
-                // 檢查這個觸控ID是否已經被使用
-                let alreadyAssigned = false;
-                ['left', 'right'].forEach(side => {
-                    if (controls[side].id === t.identifier) {
-                        alreadyAssigned = true;
-                    }
-                });
-                
-                if (alreadyAssigned) continue;
-                
-                // 強制分配為右搖桿
-                const ctrl = controls.right;
-                const dom = rStick;
-                
-                ctrl.active = true;
-                ctrl.id = t.identifier;
-                ctrl.startX = t.clientX;
-                ctrl.startY = t.clientY;
-
-                dom.style.display = 'block';
-                dom.style.left = 'auto';
-                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
-                dom.style.top = `${t.clientY - 40}px`;
-                
-                vibrate(30);
-                return; // 側邊欄觸控只處理一次
-            }
-        }
-        
-        e.preventDefault();
-        // 只有在遊戲開始後才啟用搖桿
-        if (!document.body.classList.contains('game-started')) {
-            return;
-        }
-        
+        // 檢查所有觸控點，包括側邊欄的觸控
         for (let t of e.changedTouches) {
             // 檢查這個觸控ID是否已經被使用
             let alreadyAssigned = false;
@@ -4149,32 +4112,52 @@ border-radius: 50%; top: 20px; left: 20px;
                 }
             });
             
-            // 如果這個觸控ID已經被分配，跳過
             if (alreadyAssigned) continue;
             
-            // 固定分配邏輯：左搖桿控制移動，右搖桿控制射擊
-            const screenWidth = window.innerWidth;
-            const threshold = screenWidth * 0.5; // 50%分界線
-            const side = t.clientX < threshold ? 'left' : 'right';
-            const ctrl = controls[side];
-            const dom = side === 'left' ? lStick : rStick;
+            // 確定觸控位置和分配邏輯
+            let side, ctrl, dom;
+            
+            if (isInSidebar) {
+                // 側邊欄觸控強制分配為右搖桿
+                side = 'right';
+                ctrl = controls.right;
+                dom = rStick;
+            } else {
+                // 正常區域分配：左側移動，右側射擊
+                const screenWidth = window.innerWidth;
+                const threshold = screenWidth * 0.5;
+                side = t.clientX < threshold ? 'left' : 'right';
+                ctrl = controls[side];
+                dom = side === 'left' ? lStick : rStick;
+            }
 
-            // 如果該側搖桿已經被激活，跳過（不再自動分配到另一側）
+            // 如果該側搖桿已經被激活，跳過
             if (ctrl.active) continue;
 
-            // 固定分配到對應側
+            // 分配觸控到搖桿
             ctrl.active = true;
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
             ctrl.startY = t.clientY;
+            ctrl.lastMoveTime = Date.now(); // 初始化移動時間戳
 
             dom.style.display = 'block';
-            dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
-            dom.style.right = side === 'right' ? `${screenWidth - t.clientX - 40}px` : 'auto';
+            if (side === 'left') {
+                dom.style.left = `${t.clientX - 40}px`;
+                dom.style.right = 'auto';
+            } else {
+                dom.style.left = 'auto';
+                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
+            }
             dom.style.top = `${t.clientY - 40}px`;
             
-            // 搖桿觸摸震動效果
             vibrate(30);
+        }
+        
+        e.preventDefault();
+        // 只有在遊戲開始後才啟用搖桿
+        if (!document.body.classList.contains('game-started')) {
+            return;
         }
     }
 
@@ -4195,6 +4178,9 @@ border-radius: 50%; top: 20px; left: 20px;
                     }
                     ctrl.moveX = mx;
                     ctrl.moveY = my;
+                    
+                    // 更新最後移動時間，防止被誤判為卡住
+                    ctrl.lastMoveTime = Date.now();
 
                     const knob = side === 'left' ? lKnob : rKnob;
                     knob.style.transform = `translate(${mx}px, ${my}px)`;
@@ -4311,12 +4297,32 @@ border-radius: 50%; top: 20px; left: 20px;
             resetAllJoysticks();
         }
         
+        // 特別檢查右搖桿卡住問題
+        if (controls.right.active) {
+            // 檢查右搖桿是否長時間沒有移動（可能卡住）
+            const now = Date.now();
+            if (!controls.right.lastMoveTime) {
+                controls.right.lastMoveTime = now;
+            } else if (now - controls.right.lastMoveTime > 2000) {
+                // 如果右搖桿超過2秒沒有移動且仍然激活，可能卡住了
+                console.warn('右搖桿可能卡住，強制重置');
+                const ctrl = controls.right;
+                ctrl.active = false;
+                ctrl.id = -1;
+                ctrl.moveX = 0; ctrl.moveY = 0;
+                ctrl.lastMoveTime = null;
+                rStick.style.display = 'none';
+                rKnob.style.transform = `translate(0,0)`;
+            }
+        }
+        
         // 調試信息（可選）
         if (window.DEBUG_JOYSTICK) {
             const debugInfo = {
                 left: { active: controls.left.active, id: controls.left.id, x: Math.round(controls.left.moveX), y: Math.round(controls.left.moveY) },
                 right: { active: controls.right.active, id: controls.right.id, x: Math.round(controls.right.moveX), y: Math.round(controls.right.moveY) },
-                touches: 'touches' in navigator ? navigator.touches.length : 'N/A'
+                touches: 'touches' in navigator ? navigator.touches.length : 'N/A',
+                rightStuck: controls.right.active && (Date.now() - (controls.right.lastMoveTime || Date.now())) > 2000
             };
             console.log('搖桿狀態:', debugInfo);
         }
