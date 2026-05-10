@@ -4173,6 +4173,22 @@ border-radius: 50%; top: 20px; left: 20px;
                 }
             });
         }
+        
+        // 安全檢查：如果所有觸控都結束了，確保搖桿都被重置
+        if (e.touches.length === 0) {
+            ['left', 'right'].forEach(side => {
+                const ctrl = controls[side];
+                if (ctrl.active) {
+                    ctrl.active = false;
+                    ctrl.id = -1;
+                    ctrl.moveX = 0; ctrl.moveY = 0;
+                    const dom = side === 'left' ? lStick : rStick;
+                    const knob = side === 'left' ? lKnob : rKnob;
+                    dom.style.display = 'none';
+                    knob.style.transform = `translate(0,0)`;
+                }
+            });
+        }
     }
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
