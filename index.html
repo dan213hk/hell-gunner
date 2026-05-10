@@ -262,6 +262,11 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
             }
             #game-container {
                 position: relative;
@@ -4107,6 +4112,20 @@ border-radius: 50%; top: 20px; left: 20px;
         }
         
         for (let t of e.changedTouches) {
+            // 強制重置所有搖桿狀態以防止卡住
+            ['left', 'right'].forEach(side => {
+                const ctrl = controls[side];
+                if (ctrl.active && ctrl.id !== t.identifier) {
+                    ctrl.active = false;
+                    ctrl.id = -1;
+                    ctrl.moveX = 0; ctrl.moveY = 0;
+                    const dom = side === 'left' ? lStick : rStick;
+                    const knob = side === 'left' ? lKnob : rKnob;
+                    dom.style.display = 'none';
+                    knob.style.transform = `translate(0,0)`;
+                }
+            });
+            
             // 改進右搖桿區域判斷 - 使用固定像素值而不是百分比
             const screenWidth = window.innerWidth;
             const threshold = screenWidth * 0.65;
