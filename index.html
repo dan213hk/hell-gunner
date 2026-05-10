@@ -1559,7 +1559,7 @@ function fireShotgun() {
         }
 
         // --- 新增：玩家後座力 ---
-        let recoilDist = 50;
+        let recoilDist = 25;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y, player.size)) player.x += rx;
@@ -4009,6 +4009,14 @@ border-radius: 50%; top: 20px; left: 20px;
 
     // 4. 事件監聽
     function handleTouchStart(e) {
+        // 檢查是否點擊了按鈕或其他UI元素
+        const target = e.target;
+        if (target.tagName === 'BUTTON' || target.tagName === 'A' || 
+            target.closest('button') || target.closest('a') ||
+            target.classList.contains('ui-element')) {
+            return; // 不處理UI元素的觸控事件
+        }
+        
         e.preventDefault();
         // 只有在遊戲開始後才啟用搖桿
         if (!document.body.classList.contains('game-started')) {
@@ -4084,10 +4092,13 @@ border-radius: 50%; top: 20px; left: 20px;
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
 
-    // 為整個文檔添加觸控事件監聽，確保右搖桿在任何地方都能使用
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
+    // 為遊戲容器和側邊欄添加觸控事件監聽，不干擾UI按鈕
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        gameContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        gameContainer.addEventListener('touchend', handleTouchEnd);
+    }
 
     // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
     const sidebar = document.getElementById('sidebar');
@@ -4220,7 +4231,7 @@ border-radius: 50%; top: 20px; left: 20px;
         if (typeof playSound === 'function') playSound('shot', player.wepType);
 
         // 後坐力 (根據武器類型不同)
-        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 35;
+        let recoilDist = (player.wepType === 2) ? 60 : (player.wepType === 3) ? 15 : (player.wepType === 4) ? 80 : (player.wepType === 5) ? 50 : 20;
         let rx = -Math.cos(player.angle) * recoilDist;
         let ry = -Math.sin(player.angle) * recoilDist;
         if (!isInsideWall(player.x + rx, player.y + ry, player.size)) {
