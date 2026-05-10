@@ -4176,26 +4176,18 @@ border-radius: 50%; top: 20px; left: 20px;
             ctrl.startY = t.clientY;
             ctrl.lastMoveTime = Date.now();
 
-            // 顯示搖桿 - 使用相對座標以避免畫面大小問題
-            const rect = canvas.getBoundingClientRect();
-            const canvasLeft = rect.left;
-            const canvasTop = rect.top;
-            const canvasWidth = rect.width;
-            const canvasHeight = rect.height;
-            
-            // 計算相對於canvas的座標
-            const relativeX = t.clientX - canvasLeft;
-            const relativeY = t.clientY - canvasTop;
-            
+            // 顯示搖桿 - 使用絕對定位避免複雜計算
             dom.style.display = 'block';
+            dom.style.position = 'fixed';
+            
             if (side === 'left') {
-                dom.style.left = `${relativeX - 40}px`;
+                dom.style.left = `${t.clientX - 40}px`;
                 dom.style.right = 'auto';
             } else {
                 dom.style.left = 'auto';
-                dom.style.right = `${canvasWidth - relativeX - 40}px`;
+                dom.style.right = `${window.innerWidth - t.clientX - 40}px`;
             }
-            dom.style.top = `${relativeY - 40}px`;
+            dom.style.top = `${t.clientY - 40}px`;
             
             vibrate(30);
         }
@@ -4203,17 +4195,14 @@ border-radius: 50%; top: 20px; left: 20px;
 
     function handleTouchMove(e) {
         e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const canvasLeft = rect.left;
-        const canvasTop = rect.top;
         
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
                 if (ctrl.active && ctrl.id === t.identifier) {
-                    // 使用相對於canvas的座標
-                    let mx = (t.clientX - canvasLeft) - ctrl.startX;
-                    let my = (t.clientY - canvasTop) - ctrl.startY;
+                    // 使用絕對座標計算相對移動
+                    let mx = t.clientX - ctrl.startX;
+                    let my = t.clientY - ctrl.startY;
                     const dist = Math.hypot(mx, my);
                     const limit = 40;
 
