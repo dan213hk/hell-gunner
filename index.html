@@ -261,17 +261,26 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                /* 為Safari網址欄留出空間 */
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                /* 確保Safari不顯示網址欄 */
+                height: -webkit-fill-available;
+                min-height: 100vh;
             }
             #game-container {
                 position: relative;
-                width: 90vw;
-                height: 90vh;
-                max-width: calc(90vh * 16 / 9);
-                max-height: calc(90vw * 9 / 16);
+                width: 80vw;
+                height: 70vh;
+                max-width: calc(70vh * 16 / 9);
+                max-height: calc(80vw * 9 / 16);
                 margin: auto;
                 box-sizing: border-box;
                 border: none;
-                transform: scale(0.85);
+                transform: scale(0.7);
+                /* 確保在安全區域內 */
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+                max-width: calc(100vw - 40px);
             }
             #sidebar {
                 width: 25vw;
