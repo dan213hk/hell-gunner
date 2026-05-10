@@ -264,13 +264,14 @@
             }
             #game-container {
                 position: relative;
-                width: 100vw;
-                height: 100vh;
-                max-width: calc(100vh * 16 / 9);
-                max-height: calc(100vw * 9 / 16);
+                width: 90vw;
+                height: 90vh;
+                max-width: calc(90vh * 16 / 9);
+                max-height: calc(90vw * 9 / 16);
                 margin: auto;
                 box-sizing: border-box;
                 border: none;
+                transform: scale(0.85);
             }
             #sidebar {
                 width: 25vw;
@@ -4075,6 +4076,11 @@ function restartGame() {
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
+
+    // 為整個文檔添加觸控事件監聽，確保右搖桿在任何地方都能使用
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
 
     // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
     const sidebar = document.getElementById('sidebar');
