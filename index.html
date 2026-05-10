@@ -255,18 +255,14 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
         }
         @media screen and (max-width: 1024px) {
             body {
-                height: 100vh;
-                padding: 0;
                 margin: 0;
+                padding: 0;
                 overflow: hidden;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
+                min-height: 100vh;
+                width: 100vw;
             }
             #game-container {
                 position: relative;
@@ -274,12 +270,9 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 height: 100vh;
                 max-width: calc(100vh * 16 / 9);
                 max-height: calc(100vw * 9 / 16);
-                margin: auto;
                 box-sizing: border-box;
                 border: none;
-                max-height: calc(100vw * 9 / 16 - 60px);
-                max-width: calc(100vw - 60px);
-                transform: scale(0.82);
+                transform: scale(0.78);
                 transform-origin: center center;
             }
             #sidebar {
@@ -4094,7 +4087,7 @@ border-radius: 50%; top: 20px; left: 20px;
         originalUpdate();
     };
 
-    // 4. 事件監聽
+    // 4. 事件監聽 - 改進的Multi-Touch支持
     function handleTouchStart(e) {
         // 檢查是否點擊了按鈕或其他UI元素
         const target = e.target;
@@ -4112,30 +4105,48 @@ border-radius: 50%; top: 20px; left: 20px;
         }
         
         for (let t of e.changedTouches) {
-            // 強制重置所有搖桿狀態以防止卡住
+            // 檢查這個觸控ID是否已經被使用
+            let alreadyAssigned = false;
             ['left', 'right'].forEach(side => {
-                const ctrl = controls[side];
-                if (ctrl.active && ctrl.id !== t.identifier) {
-                    ctrl.active = false;
-                    ctrl.id = -1;
-                    ctrl.moveX = 0; ctrl.moveY = 0;
-                    const dom = side === 'left' ? lStick : rStick;
-                    const knob = side === 'left' ? lKnob : rKnob;
-                    dom.style.display = 'none';
-                    knob.style.transform = `translate(0,0)`;
+                if (controls[side].id === t.identifier) {
+                    alreadyAssigned = true;
                 }
             });
             
-            // 改進右搖桿區域判斷 - 使用固定像素值而不是百分比
+            // 如果這個觸控ID已經被分配，跳過
+            if (alreadyAssigned) continue;
+            
+            // 改進的區域判斷 - 使用更精確的閾值
             const screenWidth = window.innerWidth;
-            const threshold = screenWidth * 0.65;
+            const screenHeight = window.innerHeight;
+            const threshold = screenWidth * 0.6; // 調整為60%分界線
             const side = t.clientX < threshold ? 'left' : 'right';
             const ctrl = controls[side];
             const dom = side === 'left' ? lStick : rStick;
 
-            // 如果該側搖桿已經被激活，跳過
-            if (ctrl.active) continue;
+            // 如果該側搖桿已經被激活，嘗試分配到另一側
+            if (ctrl.active) {
+                const otherSide = side === 'left' ? 'right' : 'left';
+                const otherCtrl = controls[otherSide];
+                if (!otherCtrl.active) {
+                    // 分配到另一側
+                    const otherDom = otherSide === 'left' ? lStick : rStick;
+                    otherCtrl.active = true;
+                    otherCtrl.id = t.identifier;
+                    otherCtrl.startX = t.clientX;
+                    otherCtrl.startY = t.clientY;
 
+                    otherDom.style.display = 'block';
+                    otherDom.style.left = otherSide === 'left' ? `${t.clientX - 40}px` : 'auto';
+                    otherDom.style.right = otherSide === 'right' ? `${screenWidth - t.clientX - 40}px` : 'auto';
+                    otherDom.style.top = `${t.clientY - 40}px`;
+                    
+                    vibrate(30);
+                }
+                continue;
+            }
+
+            // 正常分配
             ctrl.active = true;
             ctrl.id = t.identifier;
             ctrl.startX = t.clientX;
@@ -4177,6 +4188,7 @@ border-radius: 50%; top: 20px; left: 20px;
     }
 
     function handleTouchEnd(e) {
+        // 處理每個結束的觸控點
         for (let t of e.changedTouches) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
@@ -4195,11 +4207,32 @@ border-radius: 50%; top: 20px; left: 20px;
             });
         }
         
-        // 安全檢查：如果所有觸控都結束了，確保搖桿都被重置
+        // 增強的安全檢查：如果所有觸控都結束了，確保搖桿都被重置
         if (e.touches.length === 0) {
             ['left', 'right'].forEach(side => {
                 const ctrl = controls[side];
                 if (ctrl.active) {
+                    console.warn(`強制重置${side}搖桿狀態`);
+                    ctrl.active = false;
+                    ctrl.id = -1;
+                    ctrl.moveX = 0; ctrl.moveY = 0;
+                    const dom = side === 'left' ? lStick : rStick;
+                    const knob = side === 'left' ? lKnob : rKnob;
+                    dom.style.display = 'none';
+                    knob.style.transform = `translate(0,0)`;
+                }
+            });
+        } else {
+            // 部分觸控結束時，檢查是否有孤立的觸控ID
+            const activeTouchIds = new Set();
+            for (let t of e.touches) {
+                activeTouchIds.add(t.identifier);
+            }
+            
+            ['left', 'right'].forEach(side => {
+                const ctrl = controls[side];
+                if (ctrl.active && !activeTouchIds.has(ctrl.id)) {
+                    console.warn(`清理孤立觸控ID ${ctrl.id} 從 ${side} 搖桿`);
                     ctrl.active = false;
                     ctrl.id = -1;
                     ctrl.moveX = 0; ctrl.moveY = 0;
@@ -4212,25 +4245,60 @@ border-radius: 50%; top: 20px; left: 20px;
         }
     }
 
+    // 只在canvas上添加事件監聽器，避免重複註冊
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd); // 添加touchcancel支持
 
-    // 為遊戲容器和側邊欄添加觸控事件監聽，不干擾UI按鈕
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-        gameContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
-        gameContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
-        gameContainer.addEventListener('touchend', handleTouchEnd);
+    // 添加全局錯誤恢復機制
+    function resetAllJoysticks() {
+        console.warn('執行全局搖桿重置');
+        ['left', 'right'].forEach(side => {
+            const ctrl = controls[side];
+            ctrl.active = false;
+            ctrl.id = -1;
+            ctrl.moveX = 0; ctrl.moveY = 0;
+            const dom = side === 'left' ? lStick : rStick;
+            const knob = side === 'left' ? lKnob : rKnob;
+            dom.style.display = 'none';
+            knob.style.transform = `translate(0,0)`;
+        });
     }
 
-    // 為側邊欄添加觸控事件監聽，使其也能操控右搖桿
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.addEventListener('touchstart', handleTouchStart, { passive: false });
-        sidebar.addEventListener('touchmove', handleTouchMove, { passive: false });
-        sidebar.addEventListener('touchend', handleTouchEnd);
-    }
+    // 定期檢查和清理搖桿狀態
+    setInterval(() => {
+        if (!document.body.classList.contains('game-started')) {
+            resetAllJoysticks();
+            return;
+        }
+        
+        // 檢查是否有孤立的搖桿狀態
+        let hasActiveJoysticks = false;
+        ['left', 'right'].forEach(side => {
+            if (controls[side].active) {
+                hasActiveJoysticks = true;
+            }
+        });
+        
+        // 如果有搖桿激活但沒有觸控點，強制重置
+        if (hasActiveJoysticks && 'touches' in navigator && navigator.touches.length === 0) {
+            resetAllJoysticks();
+        }
+        
+        // 調試信息（可選）
+        if (window.DEBUG_JOYSTICK) {
+            const debugInfo = {
+                left: { active: controls.left.active, id: controls.left.id, x: Math.round(controls.left.moveX), y: Math.round(controls.left.moveY) },
+                right: { active: controls.right.active, id: controls.right.id, x: Math.round(controls.right.moveX), y: Math.round(controls.right.moveY) },
+                touches: 'touches' in navigator ? navigator.touches.length : 'N/A'
+            };
+            console.log('搖桿狀態:', debugInfo);
+        }
+    }, 1000); // 每秒檢查一次
+
+    // 全局調試開關（可在控制台設置 window.DEBUG_JOYSTICK = true 來啟用）
+    window.DEBUG_JOYSTICK = false;
 
     // 5. 視覺優化：隱藏側邊欄以增加手機視野
     // 已移除，改用 CSS media query 處理
