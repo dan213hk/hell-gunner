@@ -261,10 +261,9 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 overflow: hidden;
                 display: flex;
                 justify-content: center;
-                align-items: center;
+                align-items: flex-start;
                 /* 為Safari網址欄留出空間 */
                 padding-top: env(safe-area-inset-top);
-                padding-bottom: env(safe-area-inset-bottom);
                 /* 確保Safari不顯示網址欄 */
                 height: -webkit-fill-available;
                 min-height: 100vh;
@@ -275,14 +274,13 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 height: 100vh;
                 max-width: calc(100vh * 16 / 9);
                 max-height: calc(100vw * 9 / 16);
-                margin: 0 auto;
+                margin: 0 auto 0;
                 box-sizing: border-box;
                 border: none;
                 /* 確保在安全區域內，為Safari網址欄和導航欄留出更多空間 */
-                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 80px);
+                max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 60px);
                 max-width: calc(100vw - 30px);
                 transform: scale(0.92);
-                top: env(safe-area-inset-top);
                 transform-origin: top center;
             }
             #sidebar {
