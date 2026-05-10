@@ -272,9 +272,9 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
                 margin: auto;
                 box-sizing: border-box;
                 border: none;
-                max-height: calc(100vw * 9 / 16 - 40px);
+                max-height: calc(100vw * 9 / 16 - 60px);
                 max-width: calc(100vw - 60px);
-                transform: scale(0.85);
+                transform: scale(0.82);
                 transform-origin: center center;
             }
             #sidebar {
@@ -4107,8 +4107,10 @@ border-radius: 50%; top: 20px; left: 20px;
         }
         
         for (let t of e.changedTouches) {
-            // 改進右搖桿區域判斷 - 右側35%屏幕都算右搖桿
-            const side = t.clientX < window.innerWidth * 0.65 ? 'left' : 'right';
+            // 改進右搖桿區域判斷 - 使用固定像素值而不是百分比
+            const screenWidth = window.innerWidth;
+            const threshold = screenWidth * 0.65;
+            const side = t.clientX < threshold ? 'left' : 'right';
             const ctrl = controls[side];
             const dom = side === 'left' ? lStick : rStick;
 
@@ -4122,7 +4124,7 @@ border-radius: 50%; top: 20px; left: 20px;
 
             dom.style.display = 'block';
             dom.style.left = side === 'left' ? `${t.clientX - 40}px` : 'auto';
-            dom.style.right = side === 'right' ? `${window.innerWidth - t.clientX - 40}px` : 'auto';
+            dom.style.right = side === 'right' ? `${screenWidth - t.clientX - 40}px` : 'auto';
             dom.style.top = `${t.clientY - 40}px`;
             
             // 搖桿觸摸震動效果
