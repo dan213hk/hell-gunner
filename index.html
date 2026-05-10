@@ -317,11 +317,11 @@ body.game-started #radar-overlay { display: block; border: 2px solid #4a0000; }
             #mobile-action-buttons {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 20px !important;
+                bottom: 80px !important;
                 right: 20px !important;
                 top: auto !important;
                 transform: none !important;
-                z-index: 10003 !important;
+                z-index: 9999 !important;
                 flex-direction: column !important;
                 gap: 15px !important;
             }
@@ -5112,11 +5112,11 @@ function setupMobileButtons() {
     if (mobileActionButtons) {
         mobileActionButtons.style.display = 'flex';
         mobileActionButtons.style.position = 'fixed';
-        mobileActionButtons.style.bottom = '25px';
-        mobileActionButtons.style.right = '25px';
-        mobileActionButtons.style.zIndex = '10003';
+        mobileActionButtons.style.bottom = '80px';
+        mobileActionButtons.style.right = '20px';
+        mobileActionButtons.style.zIndex = '9999';
         mobileActionButtons.style.flexDirection = 'column';
-        mobileActionButtons.style.gap = '18px';
+        mobileActionButtons.style.gap = '15px';
     }
     
     // 強制設置按鈕樣式
